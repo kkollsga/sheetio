@@ -84,14 +84,18 @@ The `single_cells` extraction rule extracts individual cells from the Excel shee
 ```
 
 #### Multirow Patterns Extraction
-The `multirow_patterns` extraction rule extracts data from multiple rows in the Excel sheet based on a pattern. Each row is organized under a keyname extracted from the unique_id column. If the unique_id column contains a null value the loop breaks.
+The `multirow_patterns` extraction rule extracts data from multiple rows in the Excel sheet based on a pattern. Each row is organized under a keyname extracted from the unique_id column(s).
 
 **Instructions:**
-* `row_range`: A list of two integers defining the row range to extract. The function will iterate through the rows, until the first null value is found in the unique_id column.
-* `unique_id`: The column to use as a unique identifier.
+* `row_range`: A list of two integers defining the row range to extract. The function will iterate through the rows within this range.
+* `unique_id`: The column(s) to use as a unique identifier. Can be either:
+  - A single column as a string: `"B"`
+  - Multiple columns as an array: `["B", "C"]` for composite keys
+  - When using composite keys, if ANY column contains null/empty values, the row is skipped
+* `unique_id_separator` (optional): The separator to use when joining multiple columns for composite keys. Defaults to `"_"`.
 * `columns`: A dictionary where the keys are the column names and the values are the column letters (e.g., "B", "C", etc.).
 
-**Example:**
+**Example with single unique_id:**
 ```python
 {
     "sheets": ["Sheet 1", "Sheet 2"], # List of sheets to loop through
@@ -100,13 +104,37 @@ The `multirow_patterns` extraction rule extracts data from multiple rows in the 
             "function": "multirow_patterns", # Function type
             "label": "deposits", # Optional label that defines a parent key
             "instructions": { # Instructions for selected function
-                "row_range": [1, 10], # Range of rows to itterate through
-                "unique_id": "B", # The loop will break at first null value in this column
+                "row_range": [1, 10], # Range of rows to iterate through
+                "unique_id": "B", # Single column as unique identifier
                 "columns": { # Columns to extract data from, keys are used as value title.
                     "Title": "B",
                     "Description": "C",
                     "Estimate": "D",
                     "Chance": "E",
+                }
+            }
+        }
+    ]
+}
+```
+
+**Example with composite unique_id:**
+```python
+{
+    "sheets": ["Sheet 1"],
+    "extractions": [
+        {
+            "function": "multirow_patterns",
+            "label": "projects",
+            "instructions": {
+                "row_range": [1, 50],
+                "unique_id": ["B", "C"],  # Composite key from columns B and C
+                "unique_id_separator": "-",  # Optional: use "-" instead of default "_"
+                "columns": {
+                    "Project": "B",
+                    "Year": "C", 
+                    "Budget": "D",
+                    "Status": "E"
                 }
             }
         }
