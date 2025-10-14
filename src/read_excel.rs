@@ -109,34 +109,101 @@ pub async fn process_file(file_path: String, extraction_details: Vec<Value>) -> 
 
             let mut sheet_results = Map::new();
             for (function, label, instructions) in &extractions {
-                let cells_object = match function.as_str() {
-                    "single_cells" => single_cells::extract_values(&sheet, &instructions),
-                    "multirow_patterns" => multirow_patterns::extract_rows(&sheet, &instructions),
-                    "dataframe" => dataframe::extract_dataframe(&sheet, &instructions),
+                match function.as_str() {
+                    "single_cells" => {
+                        let cells_object = single_cells::extract_values(&sheet, &instructions)?;
+
+                        if label.is_empty() {
+                            for (key, value) in cells_object {
+                                let mut unique_key = key.clone();
+                                let mut counter = 1;
+                                while sheet_results.contains_key(&unique_key) {
+                                    unique_key = format!("{}_{}", key, counter);
+                                    counter += 1;
+                                }
+                                sheet_results.insert(unique_key, value);
+                            }
+                        } else {
+                            if let Some(Value::Object(existing_map)) = sheet_results.get_mut(label.as_str()) {
+                                for (key, value) in cells_object {
+                                    existing_map.insert(key, value);
+                                }
+                            } else {
+                                let value: Value = cells_object.into_iter().collect();
+                                sheet_results.insert(label.clone(), value);
+                            }
+                        }
+                    }
+                    "multirow_patterns" => {
+                        let result_value = multirow_patterns::extract_rows(&sheet, &instructions)?;
+
+                        if label.is_empty() {
+                            // If no label, try to merge the result into sheet_results
+                            match result_value {
+                                Value::Object(obj) => {
+                                    for (key, value) in obj {
+                                        let mut unique_key = key.clone();
+                                        let mut counter = 1;
+                                        while sheet_results.contains_key(&unique_key) {
+                                            unique_key = format!("{}_{}", key, counter);
+                                            counter += 1;
+                                        }
+                                        sheet_results.insert(unique_key, value);
+                                    }
+                                }
+                                Value::Array(_) => {
+                                    // For array results without label, use function name as key
+                                    sheet_results.insert("multirow_patterns".to_string(), result_value);
+                                }
+                                _ => {}
+                            }
+                        } else {
+                            // With label, store the result directly under the label
+                            if let Some(Value::Object(existing_map)) = sheet_results.get_mut(label.as_str()) {
+                                // If label already exists as object, try to merge
+                                match result_value {
+                                    Value::Object(obj) => {
+                                        for (key, value) in obj {
+                                            existing_map.insert(key, value);
+                                        }
+                                    }
+                                    _ => {
+                                        // Can't merge non-object into existing object, replace with new value
+                                        sheet_results.insert(label.clone(), result_value);
+                                    }
+                                }
+                            } else {
+                                sheet_results.insert(label.clone(), result_value);
+                            }
+                        }
+                    }
+                    "dataframe" => {
+                        let cells_object = dataframe::extract_dataframe(&sheet, &instructions)?;
+
+                        if label.is_empty() {
+                            for (key, value) in cells_object {
+                                let mut unique_key = key.clone();
+                                let mut counter = 1;
+                                while sheet_results.contains_key(&unique_key) {
+                                    unique_key = format!("{}_{}", key, counter);
+                                    counter += 1;
+                                }
+                                sheet_results.insert(unique_key, value);
+                            }
+                        } else {
+                            if let Some(Value::Object(existing_map)) = sheet_results.get_mut(label.as_str()) {
+                                for (key, value) in cells_object {
+                                    existing_map.insert(key, value);
+                                }
+                            } else {
+                                let value: Value = cells_object.into_iter().collect();
+                                sheet_results.insert(label.clone(), value);
+                            }
+                        }
+                    }
                     _ => {
                         println!("Unsupported function type '{}'", function);
                         continue;
-                    }
-                }?;
-
-                if label.is_empty() {
-                    for (key, value) in cells_object {
-                        let mut unique_key = key.clone();
-                        let mut counter = 1;
-                        while sheet_results.contains_key(&unique_key) {
-                            unique_key = format!("{}_{}", key, counter);
-                            counter += 1;
-                        }
-                        sheet_results.insert(unique_key, value);
-                    }
-                } else {
-                    if let Some(Value::Object(existing_map)) = sheet_results.get_mut(label.as_str()) {
-                        for (key, value) in cells_object {
-                            existing_map.insert(key, value);
-                        }
-                    } else {
-                        let value: Value = cells_object.into_iter().collect(); // Convert BTreeMap to serde_json::Value
-                        sheet_results.insert(label.clone(), value);
                     }
                 }
             }

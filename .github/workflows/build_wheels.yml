@@ -4,9 +4,26 @@ on:
     paths:
       - 'Cargo.toml'
   workflow_dispatch: # Allow manual triggering
+
 jobs:
+  version:
+    name: Extract version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Extract version from Cargo.toml
+        id: get_version
+        run: |
+          VERSION=$(grep -m 1 "version" Cargo.toml | cut -d '"' -f 2)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Package version: $VERSION"
+
   build:
     name: Build wheels on ${{ matrix.os }}
+    needs: version
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write
@@ -54,7 +71,7 @@ jobs:
           path: wheels/*.whl
   publish:
     name: Publish to PyPI
-    needs: build
+    needs: [version, build]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -70,6 +87,7 @@ jobs:
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
+          user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
           skip_existing: true
           # Uncomment to test on TestPyPI first
@@ -79,5 +97,5 @@ jobs:
         with:
           files: dist/*.whl
           generate_release_notes: true
-          tag_name: auto-release-${{ github.sha }}
+          tag_name: v${{ needs.version.outputs.version }}
           token: ${{ secrets.RELEASE_TOKEN }}

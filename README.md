@@ -84,16 +84,36 @@ The `single_cells` extraction rule extracts individual cells from the Excel shee
 ```
 
 #### Multirow Patterns Extraction
-The `multirow_patterns` extraction rule extracts data from multiple rows in the Excel sheet based on a pattern. Each row is organized under a keyname extracted from the unique_id column(s).
+The `multirow_patterns` extraction rule extracts data from multiple rows in the Excel sheet based on a pattern.
 
 **Instructions:**
 * `row_range`: A list of two integers defining the row range to extract. The function will iterate through the rows within this range.
-* `unique_id`: The column(s) to use as a unique identifier. Can be either:
+* `unique_id` (optional): The column(s) to use as a unique identifier. Can be either:
   - A single column as a string: `"B"`
   - Multiple columns as an array: `["B", "C"]` for composite keys
   - When using composite keys, if ANY column contains null/empty values, the row is skipped
+  - **If omitted**: Results are returned as an array/list instead of a dictionary
 * `unique_id_separator` (optional): The separator to use when joining multiple columns for composite keys. Defaults to `"_"`.
 * `columns`: A dictionary where the keys are the column names and the values are the column letters (e.g., "B", "C", etc.).
+* `stop_if_empty` (optional): Controls when to stop processing rows. Can be:
+  - A column string: `"A"` - Stop when this column is empty
+  - An array of columns: `["A", "B"]` - Stop when ALL specified columns are empty
+  - The string `"row"` - Stop when the entire data row is empty
+  - An object with detailed configuration:
+    ```python
+    {
+        "column": "A",        # or ["A", "B"] for multiple columns
+        "consecutive": 2      # Number of consecutive empty rows/columns to trigger stop
+    }
+    ```
+    or
+    ```python
+    {
+        "mode": "row",        # "row" or "column"
+        "consecutive": 1      # Default is 1
+    }
+    ```
+* `stop_consecutive` (optional): Used with simple `stop_if_empty` syntax to specify how many consecutive empty rows trigger a stop. Defaults to `1`.
 
 **Example with single unique_id:**
 ```python
@@ -132,9 +152,102 @@ The `multirow_patterns` extraction rule extracts data from multiple rows in the 
                 "unique_id_separator": "-",  # Optional: use "-" instead of default "_"
                 "columns": {
                     "Project": "B",
-                    "Year": "C", 
+                    "Year": "C",
                     "Budget": "D",
                     "Status": "E"
+                }
+            }
+        }
+    ]
+}
+```
+
+**Example without unique_id (returns array/list):**
+```python
+{
+    "sheets": ["Sheet 1"],
+    "extractions": [
+        {
+            "function": "multirow_patterns",
+            "label": "items",
+            "instructions": {
+                "row_range": [1, 1000],
+                "stop_if_empty": "A",  # Stop when column A is empty
+                "columns": {
+                    "Name": "A",
+                    "Value": "B",
+                    "Description": "C"
+                }
+            }
+        }
+    ]
+}
+# Returns: {"items": [{"Name": "...", "Value": ...}, {"Name": "...", "Value": ...}]}
+```
+
+**Example with stop_if_empty and gap tolerance:**
+```python
+{
+    "sheets": ["Sheet 1"],
+    "extractions": [
+        {
+            "function": "multirow_patterns",
+            "label": "data",
+            "instructions": {
+                "row_range": [1, 100],
+                "stop_if_empty": "A",
+                "stop_consecutive": 3,  # Tolerate up to 2 empty rows
+                "columns": {
+                    "ID": "A",
+                    "Value": "B"
+                }
+            }
+        }
+    ]
+}
+```
+
+**Example with row-based empty detection:**
+```python
+{
+    "sheets": ["Sheet 1"],
+    "extractions": [
+        {
+            "function": "multirow_patterns",
+            "label": "records",
+            "instructions": {
+                "row_range": [1, 500],
+                "stop_if_empty": {
+                    "mode": "row",
+                    "consecutive": 2
+                },
+                "columns": {
+                    "Field1": "A",
+                    "Field2": "B",
+                    "Field3": "C"
+                }
+            }
+        }
+    ]
+}
+```
+
+**Example with multiple column monitoring:**
+```python
+{
+    "sheets": ["Sheet 1"],
+    "extractions": [
+        {
+            "function": "multirow_patterns",
+            "label": "transactions",
+            "instructions": {
+                "row_range": [1, 1000],
+                "unique_id": "A",
+                "stop_if_empty": ["A", "B"],  # Stop when both ID and Date are empty
+                "columns": {
+                    "ID": "A",
+                    "Date": "B",
+                    "Amount": "C"
                 }
             }
         }
