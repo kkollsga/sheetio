@@ -1,6 +1,6 @@
 [package]
 name = "sheet_excavator"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2021"
 authors = ["Kristian dF Kollsgård <kkollsg@gmail.com>"]
 description = "A fast Rust-powered tool for extracting data from Excel forms into JSON."
