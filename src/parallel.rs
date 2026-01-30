@@ -1,12 +1,15 @@
-use tokio::sync::Semaphore; // Import Semaphore from tokio::sync
-use std::{sync::Arc, time::Instant}; // Import Arc for creating reference-counted pointers
-use futures::stream::{FuturesUnordered, StreamExt}; // Import FuturesUnordered and StreamExt for managing and polling futures
-use serde_json::{Value, Map}; // Import serde_json::Value
+use tokio::sync::Semaphore;
+use std::{sync::Arc, time::Instant};
+use futures::stream::{FuturesUnordered, StreamExt};
+use serde_json::{Value, Map};
 use crate::read_excel::process_file;
-use anyhow::{Result, Error};// Use anyhow::Result for simplified error handling
-use crate::utils::conversions;
+use anyhow::{Result, Error};
+use crate::utils::{conversions, helpers};
 
-pub async fn process_files(file_paths: Vec<String>, extraction_details: Vec<Value>, num_workers: usize) -> Result<Map<String, Value>, Error> {
+/// Process multiple files in parallel with a semaphore-controlled worker pool.
+///
+/// Uses Arc<Vec<Value>> to share extraction config without deep cloning (Bottleneck #1 fix).
+pub async fn process_files(file_paths: Vec<String>, extraction_details: Arc<Vec<Value>>, num_workers: usize) -> Result<Map<String, Value>, Error> {
     println!("Processing files!");
     let semaphore = Arc::new(Semaphore::new(num_workers));
 
@@ -16,7 +19,8 @@ pub async fn process_files(file_paths: Vec<String>, extraction_details: Vec<Valu
 
     for (index, path_str) in file_paths.into_iter().enumerate() {
         let path_str_clone = path_str.clone();
-        let details_clone = extraction_details.clone();
+        // Use Arc::clone for cheap reference count increment instead of deep clone
+        let details_clone = Arc::clone(&extraction_details);
         let sem_clone = semaphore.clone();
 
         let permit = sem_clone.acquire_owned().await.unwrap();
@@ -42,18 +46,13 @@ pub async fn process_files(file_paths: Vec<String>, extraction_details: Vec<Valu
             Ok(Ok(value)) => {
                 if let Some(file_path) = value.get("filepath").and_then(|v| v.as_str()) {
                     let base_filename = conversions::extract_filename(file_path);
-                    let mut filename_key = base_filename.clone();
-                    let mut counter = 1;
-                    // Ensure the key is unique by appending a counter if needed
-                    while results.contains_key(&filename_key) {
-                        filename_key = format!("{}_{}", base_filename, counter);
-                        counter += 1;
-                    }
+                    // Use helper function for unique key generation (Bottleneck #7 fix)
+                    let filename_key = helpers::make_unique_key(&results, &base_filename);
                     results.insert(filename_key, value);
                 }
             },
-            Ok(Err(e)) => return Err(e.into()), // Convert the inner error to the function's error type
-            Err(e) => return Err(anyhow::Error::new(e)), // Convert the JoinError to the function's error type
+            Ok(Err(e)) => return Err(e.into()),
+            Err(e) => return Err(anyhow::Error::new(e)),
         }
     }
 

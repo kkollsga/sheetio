@@ -1,18 +1,27 @@
 use calamine::{Reader, open_workbook_auto};
 use serde_json::{Map, Value};
 use anyhow::{Result, Error};
-use std::iter::Iterator;
-use crate::utils::{conversions, manipulations, dataframe, single_cells, multirow_patterns, match_sheet_names};
+use std::collections::HashSet;
+use std::sync::Arc;
+use indexmap::IndexSet;
+use crate::utils::{conversions, manipulations, dataframe, single_cells, multirow_patterns, match_sheet_names, helpers};
 
-fn extend_unique<T: PartialEq>(vec: &mut Vec<T>, value: T) {
-    if !vec.contains(&value) {
-        vec.push(value);
-    }
-}
-
-pub async fn process_file(file_path: String, extraction_details: Vec<Value>) -> Result<Value, Error> {
+/// Process a single Excel file with the given extraction configurations.
+///
+/// Accepts Arc<Vec<Value>> to avoid deep cloning the config for each file (Bottleneck #1 fix).
+pub async fn process_file(file_path: String, extraction_details: Arc<Vec<Value>>) -> Result<Value, Error> {
     let mut results = Map::new();
     results.insert("filepath".to_string(), Value::String(file_path.clone()));
+
+    // Open workbook ONCE before the extraction loop (Bottleneck #4 fix)
+    let mut workbook = match open_workbook_auto(&file_path) {
+        Ok(workbook) => workbook,
+        Err(err) => {
+            let base_filename = conversions::extract_filename(&file_path);
+            println!("Error: {} :: {}", base_filename, err);
+            return Ok(Value::Null);
+        }
+    };
 
     for extract in extraction_details.iter() {
         let map = match extract {
@@ -20,35 +29,31 @@ pub async fn process_file(file_path: String, extraction_details: Vec<Value>) -> 
             _ => return Err(Error::msg("Extraction detail should be a JSON object")),
         };
 
-        let mut workbook = match open_workbook_auto(&file_path) {
-            Ok(workbook) => workbook,
-            Err(err) => {
-                let base_filename = conversions::extract_filename(&file_path);
-                println!("Error: {} :: {}", base_filename, err);
-                return Ok(Value::Null); // or return an empty object, depending on your needs
-            }
-        };
-
-        let mut sheet_names: Vec<String> = Vec::new();
+        let mut sheet_names: IndexSet<String> = IndexSet::new();
         if let Some(sheets) = map.get("sheets") {
             if let Some(sheets_array) = sheets.as_array() {
-                let skip_sheets = map.get("skip_sheets")
+                // Use HashSet for O(1) skip_sheets lookups instead of O(n) linear search
+                let skip_sheets: HashSet<String> = map.get("skip_sheets")
                     .and_then(|v| v.as_array())
-                    .map(|arr| arr.iter().cloned().collect::<Vec<_>>())
-                    .unwrap_or_else(|| Vec::new());
+                    .map(|arr| {
+                        arr.iter()
+                            .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                            .collect()
+                    })
+                    .unwrap_or_default();
 
                 for sheet in sheets_array {
                     if let Some(sheet_str) = sheet.as_str() {
                         if sheet_str.contains('*') {
                             for sheet_name in match_sheet_names(&workbook.sheet_names().to_vec(), sheet_str) {
-                                if !skip_sheets.iter().any(|s| s == &sheet_name) {
-                                    extend_unique(&mut sheet_names, sheet_name);
+                                if !skip_sheets.contains(&sheet_name) {
+                                    sheet_names.insert(sheet_name);
                                 }
                             }
                         } else {
                             let sheet_name = sheet_str.to_string();
-                            if !skip_sheets.iter().any(|s| s == &sheet_name) {
-                                extend_unique(&mut sheet_names, sheet_name);
+                            if !skip_sheets.contains(&sheet_name) {
+                                sheet_names.insert(sheet_name);
                             }
                         }
                     } else {
@@ -115,12 +120,8 @@ pub async fn process_file(file_path: String, extraction_details: Vec<Value>) -> 
 
                         if label.is_empty() {
                             for (key, value) in cells_object {
-                                let mut unique_key = key.clone();
-                                let mut counter = 1;
-                                while sheet_results.contains_key(&unique_key) {
-                                    unique_key = format!("{}_{}", key, counter);
-                                    counter += 1;
-                                }
+                                // Use helper function for unique key generation (Bottleneck #7 fix)
+                                let unique_key = helpers::make_unique_key(&sheet_results, &key);
                                 sheet_results.insert(unique_key, value);
                             }
                         } else {
@@ -142,12 +143,8 @@ pub async fn process_file(file_path: String, extraction_details: Vec<Value>) -> 
                             match result_value {
                                 Value::Object(obj) => {
                                     for (key, value) in obj {
-                                        let mut unique_key = key.clone();
-                                        let mut counter = 1;
-                                        while sheet_results.contains_key(&unique_key) {
-                                            unique_key = format!("{}_{}", key, counter);
-                                            counter += 1;
-                                        }
+                                        // Use helper function for unique key generation
+                                        let unique_key = helpers::make_unique_key(&sheet_results, &key);
                                         sheet_results.insert(unique_key, value);
                                     }
                                 }
@@ -182,12 +179,8 @@ pub async fn process_file(file_path: String, extraction_details: Vec<Value>) -> 
 
                         if label.is_empty() {
                             for (key, value) in cells_object {
-                                let mut unique_key = key.clone();
-                                let mut counter = 1;
-                                while sheet_results.contains_key(&unique_key) {
-                                    unique_key = format!("{}_{}", key, counter);
-                                    counter += 1;
-                                }
+                                // Use helper function for unique key generation
+                                let unique_key = helpers::make_unique_key(&sheet_results, &key);
                                 sheet_results.insert(unique_key, value);
                             }
                         } else {

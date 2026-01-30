@@ -8,6 +8,8 @@ pub mod multirow_patterns;
 pub mod dataframe;
 pub mod conversions;
 pub mod manipulations;
+pub mod helpers;
+pub mod parsed_config;
 
 fn pydict_to_json_value(pydict: &Bound<'_, PyDict>) -> PyResult<Value> {
     let mut map = Map::new(); // Use serde_json::Map directly
