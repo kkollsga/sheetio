@@ -1,5 +1,15 @@
 # Sheet Excavator
+
+[![PyPI version](https://badge.fury.io/py/sheet-excavator.svg)](https://badge.fury.io/py/sheet-excavator)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A fast Rust-powered tool for extracting data from Excel forms into JSON.
+
+## Requirements
+
+- Python 3.10 or higher
+- Supported platforms: Windows, macOS, Linux
 
 ## Overview
 Sheet Excavator is a Rust-based tool designed to facilitate the efficient extraction of data from standardized Excel forms. Traditional reporting often relies on Excel forms that do not conform to the typical CSV data storage format, making data extraction challenging. Existing Python-based workflows may also suffer from performance issues when handling large databases of forms stored in .xlsx files.
@@ -36,8 +46,8 @@ import json
 
 files = glob.glob(r"D:\temp\*") # List of files to process
 extraction_details = [...]  # define list extraction details to apply to each file (see below)
-workers = 10 # Number of parallell workers, should reflect number of cpu cores on the system.
-results = sheet_excavator.excel_extract(files, extraction_details, workers) # excel_extractor returns a json formated string
+workers = 10 # Number of parallel workers (default: 5), should reflect number of CPU cores
+results = sheet_excavator.excel_extract(files, extraction_details, workers) # returns a JSON formatted string
 dict_results = json.loads(results) # convert the json string to a python dict
 print(json.dumps(dict_results, indent=3))
 ```
@@ -256,7 +266,7 @@ The `multirow_patterns` extraction rule extracts data from multiple rows in the 
 ```
 
 #### Dataframe Extraction
-The dataframe extraction rule extracts data into a Pandas DataFrame.
+The dataframe extraction rule extracts tabular data with headers, returning JSON that can easily be converted to a Pandas DataFrame.
 
 **Instructions:**
 

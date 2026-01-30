@@ -24,19 +24,19 @@ fn pydict_to_json_value(pydict: &Bound<'_, PyDict>) -> PyResult<Value> {
 
 /// Helper function to convert Python objects to `serde_json::Value`.
 fn python_object_to_value(obj: &Bound<'_, PyAny>) -> PyResult<Value> {
-    if let Ok(list) = obj.downcast::<PyList>() {
+    if let Ok(list) = obj.cast::<PyList>() {
         // Use a closure to adapt the function for the map call
         let vec: Vec<Value> = list.iter()
             .map(|item| python_object_to_value(&item))
             .collect::<PyResult<_>>()?;
         Ok(Value::from(vec))
-    } else if let Ok(dict) = obj.downcast::<PyDict>() {
+    } else if let Ok(dict) = obj.cast::<PyDict>() {
         pydict_to_json_value(dict)
-    } else if let Ok(s) = obj.downcast::<PyString>() {
+    } else if let Ok(s) = obj.cast::<PyString>() {
         Ok(Value::from(s.to_str()?))
-    } else if let Ok(num) = obj.downcast::<PyInt>() {
+    } else if let Ok(num) = obj.cast::<PyInt>() {
         Ok(Value::from(num.extract::<i64>()?))
-    } else if let Ok(num) = obj.downcast::<PyFloat>() {
+    } else if let Ok(num) = obj.cast::<PyFloat>() {
         Ok(Value::from(num.extract::<f64>()?))
     } else if obj.is_none() {
         Ok(Value::Null)
@@ -49,7 +49,7 @@ fn python_object_to_value(obj: &Bound<'_, PyAny>) -> PyResult<Value> {
 /// Converts a `PyList` of `PyDicts` into a `Vec<serde_json::Value>`.
 pub fn pylist_to_json(pylist: &Bound<'_, PyList>) -> PyResult<Vec<Value>> {
     pylist.iter().map(|item| {
-        let detail_dict = item.downcast::<PyDict>()?;
+        let detail_dict = item.cast::<PyDict>()?;
         pydict_to_json_value(detail_dict)
     }).collect()
 }

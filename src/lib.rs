@@ -10,6 +10,7 @@ mod utils;
 use utils::pylist_to_json;
 
 #[pyfunction]
+#[pyo3(signature = (file_paths, extraction_details, num_workers=None))]
 fn excel_extract(_py: Python<'_>, file_paths: &Bound<'_, PyList>, extraction_details: &Bound<'_, PyList>, num_workers: Option<usize>) -> PyResult<String> {
     let file_paths: Vec<String> = file_paths.iter().map(|p| {
         p.extract::<String>()
