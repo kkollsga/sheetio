@@ -3,27 +3,52 @@ on:
   push:
     paths:
       - 'Cargo.toml'
-  workflow_dispatch: # Allow manual triggering
+  workflow_dispatch:
 
 jobs:
   version:
-    name: Extract version
+    name: Check version
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.get_version.outputs.version }}
+      should_publish: ${{ steps.check_pypi.outputs.should_publish }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       - name: Extract version from Cargo.toml
         id: get_version
         run: |
           VERSION=$(grep -m 1 "version" Cargo.toml | cut -d '"' -f 2)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Package version: $VERSION"
+      - name: Check if version exists on PyPI
+        id: check_pypi
+        run: |
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://pypi.org/pypi/sheet_excavator/${{ steps.get_version.outputs.version }}/json")
+          if [ "$HTTP_STATUS" = "200" ]; then
+            echo "Version ${{ steps.get_version.outputs.version }} already on PyPI"
+            echo "should_publish=false" >> $GITHUB_OUTPUT
+          else
+            echo "Version ${{ steps.get_version.outputs.version }} not on PyPI"
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+          fi
+
+  ci-gate:
+    name: Wait for CI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.sha }}
+          check-regexp: ^(Rust checks|Python checks|Tests)
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
 
   build:
     name: Build wheels on ${{ matrix.os }}
-    needs: version
+    needs: [version, ci-gate]
+    if: needs.version.outputs.should_publish == 'true'
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write
@@ -40,62 +65,54 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Upgrade pip
-        run: python -m pip install --upgrade pip
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+      - run: python -m pip install --upgrade pip
+      - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
-      - name: Install Maturin
-        run: pip install maturin
+      - run: pip install maturin
       - name: Build wheels
         run: |
           if (!(Test-Path -Path "wheels")) { New-Item -ItemType Directory -Path "wheels" }
           maturin build --release --target ${{ matrix.target }} --out wheels
         shell: pwsh
-      - name: List build directory
-        run: Get-ChildItem -Recurse wheels
-        shell: pwsh
-      - name: Upload wheels as artifact
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: wheels-${{ matrix.os }}-${{ matrix.python-version }}
           path: wheels/*.whl
+
   publish:
     name: Publish to PyPI
     needs: [version, build]
+    if: needs.version.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
     steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
         with:
           pattern: wheels-*
           path: dist
           merge-multiple: true
-      - name: Display structure of downloaded files
-        run: find dist -type f
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
-          skip_existing: true
-          # Uncomment to test on TestPyPI first
-          # repository_url: https://test.pypi.org/legacy/
+      - name: Extract changelog for release
+        id: changelog
+        run: |
+          VERSION=${{ needs.version.outputs.version }}
+          BODY=$(sed -n "/^## \[$VERSION\]/,/^## \[/{ /^## \[$VERSION\]/d; /^## \[/d; p; }" CHANGELOG.md)
+          echo "body<<CHANGELOG_EOF" >> $GITHUB_OUTPUT
+          echo "$BODY" >> $GITHUB_OUTPUT
+          echo "CHANGELOG_EOF" >> $GITHUB_OUTPUT
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*.whl
-          generate_release_notes: true
+          body: ${{ steps.changelog.outputs.body }}
           tag_name: v${{ needs.version.outputs.version }}
           token: ${{ secrets.RELEASE_TOKEN }}
