@@ -13,7 +13,7 @@ jobs:
       version: ${{ steps.get_version.outputs.version }}
       should_publish: ${{ steps.check_pypi.outputs.should_publish }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Extract version from Cargo.toml
         id: get_version
         run: |
@@ -37,7 +37,7 @@ jobs:
     name: Wait for CI
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: lewagon/wait-on-check-action@v1.3.4
         with:
           ref: ${{ github.sha }}
@@ -65,7 +65,7 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
@@ -93,7 +93,7 @@ jobs:
       contents: write
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/download-artifact@v4
         with:
           pattern: wheels-*
