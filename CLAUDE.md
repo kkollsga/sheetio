@@ -15,20 +15,26 @@ Note: If both VIRTUAL_ENV and CONDA_PREFIX are set, unset CONDA_PREFIX before ru
 
 ## Architecture
 
-Single PyO3 function `excel_extract(file_paths, extraction_details, num_workers)` returns JSON string.
+Mixed Rust/Python package. Rust native module `_sheet_excavator` provides `excel_extract()`. Python package re-exports it and adds `ExtractionConfig` builder.
 
 ```
-lib.rs          -> Entry point, PyO3 module definition
-parallel.rs     -> Async file processing with tokio
-read_excel.rs   -> Per-file extraction orchestration
-utils/
-  single_cells.rs       -> Extract individual cells by address
-  multirow_patterns.rs  -> Extract rows with unique_id, stop conditions
-  dataframe.rs          -> Extract tabular data with multi-row headers
-  conversions.rs        -> Cell address parsing (e.g., "B12" -> row, col)
-  helpers.rs            -> Unique key generation, sheet matching
-  manipulations.rs      -> Cell value extraction and type conversion
-  parsed_config.rs      -> Pre-parsed config structs (performance optimization)
+python/sheet_excavator/
+  __init__.py           -> Re-exports excel_extract + ExtractionConfig
+  config.py             -> ExtractionConfig and SheetGroup builder classes
+  _sheet_excavator.pyi  -> Type stub for the Rust module
+
+src/
+  lib.rs                -> Entry point, PyO3 module definition
+  parallel.rs           -> Async file processing with tokio
+  read_excel.rs         -> Per-file extraction orchestration
+  utils/
+    single_cells.rs       -> Extract individual cells by address
+    multirow_patterns.rs  -> Extract rows with unique_id, stop conditions
+    dataframe.rs          -> Extract tabular data with multi-row headers
+    conversions.rs        -> Cell address parsing (e.g., "B12" -> row, col)
+    helpers.rs            -> Unique key generation, sheet matching
+    manipulations.rs      -> Cell value extraction and type conversion
+    parsed_config.rs      -> Pre-parsed config structs (performance optimization)
 ```
 
 ## API Change Checklist
@@ -36,9 +42,10 @@ utils/
 When modifying the `excel_extract` function or its behavior:
 
 1. Update Rust source code
-2. Update `sheet_excavator.pyi` type stub
-3. Update CHANGELOG.md (under [Unreleased])
-4. Update README.md if user-facing
+2. Update `python/sheet_excavator/_sheet_excavator.pyi` type stub
+3. Update `python/sheet_excavator/__init__.py` exports if adding new functions
+4. Update CHANGELOG.md (under [Unreleased])
+5. Update README.md if user-facing
 
 ## Commit Conventions
 

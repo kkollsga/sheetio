@@ -60,6 +60,40 @@ config = [
 result = json.loads(sheet_excavator.excel_extract(files, config, 5))
 ```
 
+## Config Builder
+
+Use `ExtractionConfig` to build configs iteratively with method chaining, instead of writing raw dicts:
+
+```python
+from sheet_excavator import ExtractionConfig
+
+config = ExtractionConfig()
+
+# Add extractions with a fluent API
+config.add_sheets(["Sheet1"]) \
+    .single_cells("header", title="B2", date="D4", author="B6") \
+    .multirow("items",
+        row_range=(10, 100),
+        unique_id="A",
+        stop_if_empty="A",
+        columns={"ID": "A", "Description": "B", "Value": "C"})
+
+# Extract directly — returns parsed Python dicts (no json.loads needed)
+result = config.extract(["form_001.xlsx", "form_002.xlsx"], workers=5)
+
+# Save / load configs as JSON files
+config.to_json("my_config.json")
+config = ExtractionConfig.from_json("my_config.json")
+
+# Inspect what you've built
+config.summary()
+
+# Or get the raw config list for manual use
+raw = config.build()
+```
+
+All three extraction types are supported: `.single_cells()`, `.multirow()`, `.dataframe()`. See the [Extraction Types Reference](#extraction-types-reference) below for all available options.
+
 ## Key Features
 
 | Feature | Description |

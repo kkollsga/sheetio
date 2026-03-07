@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `ExtractionConfig` builder class for constructing extraction configs with method chaining
+- JSON import/export for configs (`.to_json()` / `.from_json()`)
+- Direct extraction via `.extract()` returning parsed Python dicts
+- `.summary()` for human-readable config inspection
+- Mixed Rust/Python package structure (maturin)
+
 ## [0.2.4] - 2026-01-30
 
 ### Changed
