@@ -18,7 +18,7 @@ fmt:
 	ruff check --fix .
 
 cov:
-	pytest tests/ --cov=sheet_excavator --cov-report=term-missing
+	pytest tests/ --cov=sheetio --cov-report=term-missing
 
 clean:
 	cargo clean

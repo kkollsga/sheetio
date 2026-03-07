@@ -1,4 +1,4 @@
-"""ExtractionConfig builder for sheet_excavator extraction configurations."""
+"""ExtractionConfig builder for sheetio extraction configurations."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from typing import Any
 
 
 class ExtractionConfig:
-    """Builder for sheet_excavator extraction configurations.
+    """Builder for sheetio extraction configurations.
 
     Provides a fluent API for constructing extraction configs iteratively,
     with JSON import/export and direct execution support.
@@ -61,7 +61,7 @@ class ExtractionConfig:
         Returns:
             Parsed dict of extraction results.
         """
-        from sheet_excavator._sheet_excavator import excel_extract
+        from sheetio._sheetio import excel_extract
 
         return json.loads(excel_extract(files, self.build(), workers))
 

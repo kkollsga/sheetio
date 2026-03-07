@@ -3,7 +3,7 @@ requires = ["maturin>=1.5,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "sheet_excavator"
+name = "sheetio"
 description = "A fast Rust-powered tool for extracting data from Excel forms into JSON"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -29,13 +29,13 @@ dynamic = ["version"]
 [tool.maturin]
 features = ["pyo3/extension-module"]
 python-source = "python"
-module-name = "sheet_excavator._sheet_excavator"
+module-name = "sheetio._sheetio"
 
 [project.urls]
-Homepage = "https://github.com/kkollsga/sheet-excavator"
-Repository = "https://github.com/kkollsga/sheet-excavator"
-Issues = "https://github.com/kkollsga/sheet-excavator/issues"
-Changelog = "https://github.com/kkollsga/sheet-excavator/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/kkollsga/sheetio"
+Repository = "https://github.com/kkollsga/sheetio"
+Issues = "https://github.com/kkollsga/sheetio/issues"
+Changelog = "https://github.com/kkollsga/sheetio/blob/main/CHANGELOG.md"
 
 [tool.ruff]
 line-length = 120
@@ -53,7 +53,7 @@ markers = ["slow: marks tests as slow (deselect with '-m \"not slow\"')"]
 strict_markers = true
 
 [tool.coverage.run]
-source = ["sheet_excavator"]
+source = ["sheetio"]
 
 [tool.coverage.report]
 show_missing = true

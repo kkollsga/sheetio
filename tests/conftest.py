@@ -1,4 +1,4 @@
-"""Shared fixtures for sheet_excavator tests."""
+"""Shared fixtures for sheetio tests."""
 
 import json
 from datetime import datetime
@@ -6,12 +6,12 @@ from datetime import datetime
 import pytest
 from openpyxl import Workbook
 
-import sheet_excavator
+import sheetio
 
 
 def run_extract(files, config, workers=1):
     """Run extraction and return parsed dict."""
-    return json.loads(sheet_excavator.excel_extract(files, config, workers))
+    return json.loads(sheetio.excel_extract(files, config, workers))
 
 
 @pytest.fixture

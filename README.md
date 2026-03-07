@@ -1,13 +1,13 @@
-# Sheet Excavator -- Fast Rust-Powered Excel Form Data Extraction
+# sheetio -- Fast Rust-Powered Excel Form Data Extraction
 
-[![PyPI version](https://badge.fury.io/py/sheet-excavator.svg)](https://badge.fury.io/py/sheet-excavator)
-[![CI](https://github.com/kkollsga/sheet-excavator/actions/workflows/ci.yml/badge.svg)](https://github.com/kkollsga/sheet-excavator/actions/workflows/ci.yml)
+[![PyPI version](https://badge.fury.io/py/sheetio.svg)](https://badge.fury.io/py/sheetio)
+[![CI](https://github.com/kkollsga/sheetio/actions/workflows/ci.yml/badge.svg)](https://github.com/kkollsga/sheetio/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Extract structured data from Excel forms (.xlsx, .xlsm) into JSON. Built in Rust with Python bindings via PyO3 for fast parallel processing of hundreds of files. Designed for standardized Excel forms that don't fit the typical CSV format -- government reports, engineering forms, financial templates, and survey spreadsheets.
 
-## Why Sheet Excavator?
+## Why sheetio?
 
 - **Fast** -- Rust core with async parallel file processing. Process hundreds of Excel forms in seconds.
 - **Flexible** -- Three extraction modes (single cells, row patterns, dataframes) handle any form layout.
@@ -17,11 +17,11 @@ Extract structured data from Excel forms (.xlsx, .xlsm) into JSON. Built in Rust
 ## Quick Start
 
 ```
-pip install sheet-excavator
+pip install sheetio
 ```
 
 ```python
-import sheet_excavator
+import sheetio
 import json
 
 files = ["form_001.xlsx", "form_002.xlsx", "form_003.xlsx"]
@@ -57,7 +57,7 @@ config = [
     }
 ]
 
-result = json.loads(sheet_excavator.excel_extract(files, config, 5))
+result = json.loads(sheetio.excel_extract(files, config, 5))
 ```
 
 ## Config Builder
@@ -65,7 +65,7 @@ result = json.loads(sheet_excavator.excel_extract(files, config, 5))
 Use `ExtractionConfig` to build configs iteratively with method chaining, instead of writing raw dicts:
 
 ```python
-from sheet_excavator import ExtractionConfig
+from sheetio import ExtractionConfig
 
 config = ExtractionConfig()
 
@@ -364,4 +364,4 @@ make test   # run tests
 
 ## License
 
-Sheet Excavator is released under the MIT License. See the [LICENSE](LICENSE) file for more details.
+sheetio is released under the MIT License. See the [LICENSE](LICENSE) file for more details.

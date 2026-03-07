@@ -12,7 +12,7 @@ from conftest import run_extract
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 
-import sheet_excavator
+import sheetio
 
 
 def _create_large_multirow_file(tmp_path, filename, num_rows=1000, num_columns=15, num_sheets=3):
@@ -316,7 +316,7 @@ def test_bulk_file_processing(tmp_path):
             * 5,  # 5 identical extractions to make config larger
         }
     ]
-    result = json.loads(sheet_excavator.excel_extract(files, config, 8))
+    result = json.loads(sheetio.excel_extract(files, config, 8))
 
     assert len(result) == 50
 
@@ -350,7 +350,7 @@ def test_combined_stress(tmp_path):
             ],
         }
     ]
-    result = json.loads(sheet_excavator.excel_extract(files, config, 4))
+    result = json.loads(sheetio.excel_extract(files, config, 4))
 
     assert len(result) == 10
 

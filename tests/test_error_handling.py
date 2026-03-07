@@ -2,7 +2,7 @@
 
 import pytest
 
-import sheet_excavator
+import sheetio
 
 
 def test_invalid_file_path():
@@ -16,7 +16,7 @@ def test_invalid_file_path():
         }
     ]
     # The library handles invalid files gracefully - logs error, returns empty result for that file
-    result = json.loads(sheet_excavator.excel_extract(["/nonexistent/file.xlsx"], config, 1))
+    result = json.loads(sheetio.excel_extract(["/nonexistent/file.xlsx"], config, 1))
     assert isinstance(result, dict)
 
 
@@ -30,7 +30,7 @@ def test_empty_file_list():
     ]
     import json
 
-    result = json.loads(sheet_excavator.excel_extract([], config, 1))
+    result = json.loads(sheetio.excel_extract([], config, 1))
     assert result == {} or isinstance(result, dict)
 
 
@@ -61,7 +61,7 @@ def test_empty_unique_id_array(tmp_path):
         }
     ]
     with pytest.raises(Exception):
-        sheet_excavator.excel_extract([str(filepath)], config, 1)
+        sheetio.excel_extract([str(filepath)], config, 1)
 
 
 def test_invalid_column_in_unique_id(tmp_path):
@@ -93,7 +93,7 @@ def test_invalid_column_in_unique_id(tmp_path):
         }
     ]
     # ZZZ is valid column notation, so this doesn't error - it just finds no matching data
-    result = json.loads(sheet_excavator.excel_extract([str(filepath)], config, 1))
+    result = json.loads(sheetio.excel_extract([str(filepath)], config, 1))
     assert isinstance(result, dict)
 
 
@@ -124,4 +124,4 @@ def test_non_string_in_unique_id_array(tmp_path):
         }
     ]
     with pytest.raises(Exception):
-        sheet_excavator.excel_extract([str(filepath)], config, 1)
+        sheetio.excel_extract([str(filepath)], config, 1)

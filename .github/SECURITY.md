@@ -10,6 +10,6 @@
 ## Reporting a Vulnerability
 
 Please report security vulnerabilities through GitHub's
-[private vulnerability reporting](https://github.com/kkollsga/sheet-excavator/security/advisories/new).
+[private vulnerability reporting](https://github.com/kkollsga/sheetio/security/advisories/new).
 
 Do not open public issues for security vulnerabilities.

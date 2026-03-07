@@ -24,7 +24,7 @@ jobs:
         id: check_pypi
         run: |
           HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            "https://pypi.org/pypi/sheet_excavator/${{ steps.get_version.outputs.version }}/json")
+            "https://pypi.org/pypi/sheetio/${{ steps.get_version.outputs.version }}/json")
           if [ "$HTTP_STATUS" = "200" ]; then
             echo "Version ${{ steps.get_version.outputs.version }} already on PyPI"
             echo "should_publish=false" >> $GITHUB_OUTPUT

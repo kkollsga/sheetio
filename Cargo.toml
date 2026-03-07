@@ -1,18 +1,18 @@
 [package]
-name = "sheet_excavator"
+name = "sheetio"
 version = "0.3.0"
 edition = "2021"
 authors = ["Kristian dF Kollsgård <kkollsg@gmail.com>"]
 description = "A fast Rust-powered tool for extracting data from Excel forms into JSON."
 readme = "README.md"
-repository = "https://github.com/kkollsga/sheet-excavator"
+repository = "https://github.com/kkollsga/sheetio"
 license = "MIT"
 keywords = ["excel", "data-extraction", "json", "spreadsheet", "pandas"]
 categories = ["data-processing", "parsing", "excel"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
-name = "_sheet_excavator"
+name = "_sheetio"
 crate-type = ["cdylib"]
 
 [dependencies]

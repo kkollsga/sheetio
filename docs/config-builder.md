@@ -5,7 +5,7 @@ The `ExtractionConfig` class provides a fluent Python API for building extractio
 ## Getting Started
 
 ```python
-from sheet_excavator import ExtractionConfig
+from sheetio import ExtractionConfig
 
 config = ExtractionConfig()
 ```
@@ -349,7 +349,7 @@ print(json.dumps(raw, indent=2))
 Processing government inspection forms with a header section, a checklist, and a data table:
 
 ```python
-from sheet_excavator import ExtractionConfig
+from sheetio import ExtractionConfig
 import glob
 
 config = ExtractionConfig()

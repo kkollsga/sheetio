@@ -1,8 +1,8 @@
-site_name: Sheet Excavator
+site_name: sheetio
 site_description: Fast Rust-powered Excel form data extraction to JSON
-site_url: https://kkollsga.github.io/sheet-excavator/
-repo_url: https://github.com/kkollsga/sheet-excavator
-repo_name: kkollsga/sheet-excavator
+site_url: https://kkollsga.github.io/sheetio/
+repo_url: https://github.com/kkollsga/sheetio
+repo_name: kkollsga/sheetio
 
 theme:
   name: material

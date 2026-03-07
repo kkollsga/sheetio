@@ -626,7 +626,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "sheet_excavator"
+name = "sheetio"
 version = "0.3.0"
 dependencies = [
  "anyhow",

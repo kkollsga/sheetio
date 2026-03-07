@@ -45,7 +45,7 @@ However, **developer velocity has decreased**:
 
 Being honest, these items had real value:
 
-1. **Type stubs** (`sheet_excavator.pyi`) -- helps IDE users with autocomplete and type checking
+1. **Type stubs** (`sheetio.pyi`) -- helps IDE users with autocomplete and type checking
 2. **CHANGELOG.md** -- useful reference for users upgrading between versions
 3. **Project URLs in pyproject.toml** -- helps users find the repo from PyPI
 4. **CI test matrix** -- catches Python version incompatibilities before release (though we never had one)

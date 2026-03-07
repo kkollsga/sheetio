@@ -1,4 +1,4 @@
-# Sheet Excavator - Developer Guide
+# sheetio - Developer Guide
 
 ## Build / Test / Lint Commands
 
@@ -15,13 +15,13 @@ Note: If both VIRTUAL_ENV and CONDA_PREFIX are set, unset CONDA_PREFIX before ru
 
 ## Architecture
 
-Mixed Rust/Python package. Rust native module `_sheet_excavator` provides `excel_extract()`. Python package re-exports it and adds `ExtractionConfig` builder.
+Mixed Rust/Python package. Rust native module `_sheetio` provides `excel_extract()`. Python package re-exports it and adds `ExtractionConfig` builder.
 
 ```
-python/sheet_excavator/
-  __init__.py           -> Re-exports excel_extract + ExtractionConfig
-  config.py             -> ExtractionConfig and SheetGroup builder classes
-  _sheet_excavator.pyi  -> Type stub for the Rust module
+python/sheetio/
+  __init__.py       -> Re-exports excel_extract + ExtractionConfig
+  config.py         -> ExtractionConfig and SheetGroup builder classes
+  _sheetio.pyi      -> Type stub for the Rust module
 
 src/
   lib.rs                -> Entry point, PyO3 module definition
@@ -42,8 +42,8 @@ src/
 When modifying the `excel_extract` function or its behavior:
 
 1. Update Rust source code
-2. Update `python/sheet_excavator/_sheet_excavator.pyi` type stub
-3. Update `python/sheet_excavator/__init__.py` exports if adding new functions
+2. Update `python/sheetio/_sheetio.pyi` type stub
+3. Update `python/sheetio/__init__.py` exports if adding new functions
 4. Update CHANGELOG.md (under [Unreleased])
 5. Update README.md if user-facing
 
@@ -60,4 +60,4 @@ Types: feat, fix, docs, refactor, test, chore, ci
 3. Push to main -- CI runs lint/test, then build_wheels publishes to PyPI
 
 Note: PyPI trusted publishing requires OIDC configuration at:
-https://pypi.org/manage/project/sheet-excavator/settings/publishing/
+https://pypi.org/manage/project/sheetio/settings/publishing/

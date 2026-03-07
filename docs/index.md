@@ -1,19 +1,19 @@
-# Sheet Excavator
+# sheetio
 
 **Fast Rust-powered Excel form data extraction to JSON.**
 
-[![PyPI version](https://badge.fury.io/py/sheet-excavator.svg)](https://badge.fury.io/py/sheet-excavator)
+[![PyPI version](https://badge.fury.io/py/sheetio.svg)](https://badge.fury.io/py/sheetio)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Sheet Excavator extracts structured data from Excel forms (.xlsx, .xlsm) into JSON. Built in Rust with Python bindings via PyO3 for fast parallel processing of hundreds of files.
+sheetio extracts structured data from Excel forms (.xlsx, .xlsm) into JSON. Built in Rust with Python bindings via PyO3 for fast parallel processing of hundreds of files.
 
 Designed for standardized Excel forms that don't fit the typical CSV format -- government reports, engineering forms, financial templates, and survey spreadsheets.
 
 ## Installation
 
 ```
-pip install sheet-excavator
+pip install sheetio
 ```
 
 ## Two Ways to Use It
@@ -23,7 +23,7 @@ pip install sheet-excavator
 Build extraction configs with Python methods, get results as dicts:
 
 ```python
-from sheet_excavator import ExtractionConfig
+from sheetio import ExtractionConfig
 
 config = ExtractionConfig()
 config.add_sheets(["Sheet1"]) \
@@ -43,7 +43,7 @@ See the [Config Builder Guide](config-builder.md) for the full walkthrough.
 Pass config as dicts, get JSON string back:
 
 ```python
-import sheet_excavator
+import sheetio
 import json
 
 config = [
@@ -59,7 +59,7 @@ config = [
     }
 ]
 
-result = json.loads(sheet_excavator.excel_extract(files, config, 5))
+result = json.loads(sheetio.excel_extract(files, config, 5))
 ```
 
 See the [Extraction Types Reference](extraction-types.md) for the full config schema.

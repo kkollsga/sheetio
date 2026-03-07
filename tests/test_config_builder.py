@@ -5,7 +5,7 @@ import json
 import pytest
 from conftest import run_extract
 from openpyxl import Workbook
-from sheet_excavator import ExtractionConfig
+from sheetio import ExtractionConfig
 
 # ---------------------------------------------------------------------------
 # Unit tests: verify .build() output (no Excel files needed)
@@ -350,8 +350,8 @@ def test_summary_output(capsys):
 
 
 def test_existing_import_still_works():
-    """from sheet_excavator import excel_extract still works."""
-    from sheet_excavator import excel_extract
+    """from sheetio import excel_extract still works."""
+    from sheetio import excel_extract
 
     assert callable(excel_extract)
     result = json.loads(excel_extract([], [{"sheets": ["S"], "extractions": []}], 1))

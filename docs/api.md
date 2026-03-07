@@ -2,14 +2,14 @@
 
 ## Core Function
 
-::: sheet_excavator.excel_extract
+::: sheetio.excel_extract
 
 ---
 
 ## Config Builder
 
-::: sheet_excavator.config.ExtractionConfig
+::: sheetio.config.ExtractionConfig
 
 ---
 
-::: sheet_excavator.config.SheetGroup
+::: sheetio.config.SheetGroup
