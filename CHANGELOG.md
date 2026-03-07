@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-03-07
+
+### Changed
+
+- Renamed package from `sheet-excavator` to `sheetio`
+- MkDocs documentation site with Material theme
+
 ## [0.3.0] - 2026-03-07
 
 ### Added
@@ -44,7 +51,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - break_if_null and skip_sheets support
 - GitHub Actions workflow for building and publishing wheels
 
-[Unreleased]: https://github.com/kkollsga/sheetio/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/kkollsga/sheetio/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/kkollsga/sheetio/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/kkollsga/sheetio/compare/v0.2.4...v0.3.0
 [0.2.4]: https://github.com/kkollsga/sheetio/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/kkollsga/sheetio/compare/v0.2.0...v0.2.3

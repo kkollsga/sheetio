@@ -8,11 +8,10 @@ Arc sharing, pre-parsed configs, HashSet skip_sheets, and IndexSet sheet matchin
 import json
 
 import pytest
+import sheetio
 from conftest import run_extract
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
-
-import sheetio
 
 
 def _create_large_multirow_file(tmp_path, filename, num_rows=1000, num_columns=15, num_sheets=3):

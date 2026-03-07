@@ -1,7 +1,6 @@
 """Tests for error handling."""
 
 import pytest
-
 import sheetio
 
 

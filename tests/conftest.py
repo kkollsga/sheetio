@@ -4,9 +4,8 @@ import json
 from datetime import datetime
 
 import pytest
-from openpyxl import Workbook
-
 import sheetio
+from openpyxl import Workbook
 
 
 def run_extract(files, config, workers=1):
