@@ -49,7 +49,7 @@ fn excel_extract(
     Ok(json_string)
 }
 
-#[pymodule]
+#[pymodule(gil_used = true)]
 fn _sheetio(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
     // Register the excel_extract function in the Python module
     m.add_function(wrap_pyfunction!(excel_extract, m)?)?;

@@ -1,6 +1,6 @@
 [package]
 name = "sheetio"
-version = "0.3.4"
+version = "0.3.5"
 edition = "2021"
 authors = ["Kristian dF Kollsgård <kkollsg@gmail.com>"]
 description = "A fast Rust-powered tool for extracting data from Excel forms into JSON."
@@ -16,11 +16,11 @@ name = "_sheetio"
 crate-type = ["cdylib"]
 
 [dependencies]
-anyhow = "1.0.97"
-calamine = "0.26.1"
-chrono = "0.4.40"
-futures = "0.3.31"
-indexmap = "2.8.0"
-pyo3 = "0.27.2"
-serde_json = { version = "1.0.140", features = ["preserve_order"] }
-tokio = {version = "1.44.0", features = ["full"] }
+anyhow = "1.0.102"
+calamine = "0.34.0"
+chrono = "0.4.44"
+futures = "0.3.32"
+indexmap = "2.13.0"
+pyo3 = "0.28.2"
+serde_json = { version = "1.0.149", features = ["preserve_order"] }
+tokio = {version = "1.50.0", features = ["full"] }
