@@ -117,4 +117,4 @@ jobs:
           files: dist/*.whl
           body: ${{ steps.changelog.outputs.body }}
           tag_name: v${{ needs.version.outputs.version }}
-          token: ${{ secrets.RELEASE_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
