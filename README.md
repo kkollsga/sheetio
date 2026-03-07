@@ -1,88 +1,115 @@
-# Sheet Excavator
+# Sheet Excavator -- Fast Rust-Powered Excel Form Data Extraction
 
 [![PyPI version](https://badge.fury.io/py/sheet-excavator.svg)](https://badge.fury.io/py/sheet-excavator)
+[![CI](https://github.com/kkollsga/sheet-excavator/actions/workflows/ci.yml/badge.svg)](https://github.com/kkollsga/sheet-excavator/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A fast Rust-powered tool for extracting data from Excel forms into JSON.
+Extract structured data from Excel forms (.xlsx, .xlsm) into JSON. Built in Rust with Python bindings via PyO3 for fast parallel processing of hundreds of files. Designed for standardized Excel forms that don't fit the typical CSV format -- government reports, engineering forms, financial templates, and survey spreadsheets.
+
+## Why Sheet Excavator?
+
+- **Fast** -- Rust core with async parallel file processing. Process hundreds of Excel forms in seconds.
+- **Flexible** -- Three extraction modes (single cells, row patterns, dataframes) handle any form layout.
+- **Simple** -- One function, JSON config, JSON output. No complex API to learn.
+- **Robust** -- Handles missing data, duplicate keys, wildcard sheet matching, and composite identifiers.
+
+## Quick Start
+
+```
+pip install sheet-excavator
+```
+
+```python
+import sheet_excavator
+import json
+
+files = ["form_001.xlsx", "form_002.xlsx", "form_003.xlsx"]
+
+config = [
+    {
+        "sheets": ["Sheet1"],
+        "extractions": [
+            {
+                "function": "single_cells",
+                "label": "header",
+                "instructions": {
+                    "title": "b2",
+                    "date": "d4",
+                    "author": "b6"
+                }
+            },
+            {
+                "function": "multirow_patterns",
+                "label": "items",
+                "instructions": {
+                    "row_range": [10, 100],
+                    "unique_id": "A",
+                    "stop_if_empty": "A",
+                    "columns": {
+                        "ID": "A",
+                        "Description": "B",
+                        "Value": "C"
+                    }
+                }
+            }
+        ]
+    }
+]
+
+result = json.loads(sheet_excavator.excel_extract(files, config, 5))
+```
+
+## Key Features
+
+| Feature | Description |
+|---------|-------------|
+| Parallel processing | Process multiple files simultaneously with configurable worker count |
+| Wildcard sheets | Match sheets by pattern: `"School_*"` matches School_A, School_B, etc. |
+| Composite keys | Combine multiple columns as unique identifiers: `["Project", "Year"]` |
+| Gap tolerance | Continue extraction through empty rows with `stop_consecutive` |
+| Duplicate handling | Automatic `_1`, `_2` suffixes for duplicate keys |
+| Multi-column merge | Extract arrays from multiple columns per field: `["X", "Y", "Z"]` |
+| Multi-row headers | Concatenate header rows for dataframe extraction |
 
 ## Requirements
 
 - Python 3.10 or higher
 - Supported platforms: Windows, macOS, Linux
 
-## Overview
-Sheet Excavator is a Rust-based tool designed to facilitate the efficient extraction of data from standardized Excel forms. Traditional reporting often relies on Excel forms that do not conform to the typical CSV data storage format, making data extraction challenging. Existing Python-based workflows may also suffer from performance issues when handling large databases of forms stored in .xlsx files.
+## Extraction Types Reference
 
-Leveraging Rust's high performance and robust multithreading capabilities, Sheet Excavator provides a powerful API tailored for extracting data from unstructured Excel layouts. It supports various functionalities including single cell extraction, row-based patterns, and multi-column arrays, returning results in an easy-to-use JSON format.
+### Configuration Structure
 
-## Key features
-- High Performance: Utilizes Rust’s efficiency and multithreading to handle large datasets.
-- Flexible Data Extraction: Supports various extraction methods for complex Excel form layouts.
-- JSON Output: Seamlessly integrates with modern data pipelines by outputting data in JSON format.
-
-### Install with pip
-*To install Sheet Excavator, run the following command in your terminal:*
-```
-pip install sheet-excavator
-```
-*To upgrade an already installed version of Sheet Excavator, use:*
-```
-pip install --upgrade sheet-excavator
-```
-
-## Sheet Excavator Usage Guide
-
-### Overview
-`sheet_excavator` is a Python library designed to assist in extracting data from Excel sheets. This guide provides an overview of how to use the library and its various features.
-
-### Basic Usage
-To get started with `sheet_excavator`, you can follow these steps:
-
-```python
-import sheet_excavator
-import glob
-import json
-
-files = glob.glob(r"D:\temp\*") # List of files to process
-extraction_details = [...]  # define list extraction details to apply to each file (see below)
-workers = 10 # Number of parallel workers (default: 5), should reflect number of CPU cores
-results = sheet_excavator.excel_extract(files, extraction_details, workers) # returns a JSON formatted string
-dict_results = json.loads(results) # convert the json string to a python dict
-print(json.dumps(dict_results, indent=3))
-```
-
-### Extraction Details
-The `extraction_details` parameter is a list of dictionaries that define the extraction rules for each Excel sheet. Each dictionary contains the following keys:
-* `sheets`: A list of sheet names to extract data from. Accepts patterns with *. Example School_* will loop through sheets like School_A, School_B, etc.
+The `extraction_details` parameter is a list of dictionaries that define the extraction rules for each Excel sheet. Each dictionary contains:
+* `sheets`: A list of sheet names to extract data from. Accepts patterns with `*`. Example: `"School_*"` will loop through sheets like School_A, School_B, etc.
 * `skip_sheets`: An optional list of sheet names to skip. Can be useful when using patterns in the list of sheets.
-* `extractions`: A list of extraction rules (see below), that will be applied to the sheets listed.
+* `extractions`: A list of extraction rules that will be applied to the sheets listed.
 
-
-### Extraction Rules
-The `extractions` key in the `extraction_details` dictionary contains a list of extraction rules.
-* `function`: Type of extraction function (see details below). There are three types `single_cells`, `multirow_patterns`, and `dataframe`.
+Each extraction rule contains:
+* `function`: Type of extraction function: `single_cells`, `multirow_patterns`, or `dataframe`.
 * `label`: Optional key string to store results under. If not specified the extracted key value pairs will be stored directly under the sheet name.
 * `break_if_null`: An optional check to skip sheet if specified cell is null.
-* `instructions`: Instructions for the extraction function. See details for each function type below. 
+* `instructions`: Instructions for the extraction function. See details for each function type below.
 
-#### Single Cells Extraction
-The `single_cells` extraction rule extracts individual cells from the Excel sheet.
+### Single Cells Extraction
+
+Extracts individual cells from the Excel sheet.
 
 **Instructions:**
-* `instructions`: A dictionary where the keys are the reference name (e.g. "Title", "Description", etc) and the values are the cell references (e.g., "a1", "b2", etc.).
+* `instructions`: A dictionary where the keys are the reference name and the values are the cell references (e.g., `"a1"`, `"b2"`).
 
 **Example:**
 ```python
 {
-    "sheets": ["Sheet1"], # List of sheets to loop through
-    "extractions": [ # List of extractions to attempt
+    "sheets": ["Sheet1"],
+    "extractions": [
         {
-            "function": "single_cells", # Function type
-            "label": "single", # Optional label that defines a parent key
-            "break_if_null": "c3", # Before attempting to extract values from sheet, checks if this cell is null
-            "instructions": { # Instructions for selected function
-                "Value 1": "a1", # Title, cell address pairs.
+            "function": "single_cells",
+            "label": "single",
+            "break_if_null": "c3",
+            "instructions": {
+                "Value 1": "a1",
                 "Value 2": "b2",
                 "Value 3": "c3",
                 "Date": "d4",
@@ -93,50 +120,45 @@ The `single_cells` extraction rule extracts individual cells from the Excel shee
 }
 ```
 
-#### Multirow Patterns Extraction
-The `multirow_patterns` extraction rule extracts data from multiple rows in the Excel sheet based on a pattern.
+### Multirow Patterns Extraction
+
+Extracts data from multiple rows based on a pattern.
 
 **Instructions:**
-* `row_range`: A list of two integers defining the row range to extract. The function will iterate through the rows within this range.
+* `row_range`: A list of two integers defining the row range to extract.
 * `unique_id` (optional): The column(s) to use as a unique identifier. Can be either:
   - A single column as a string: `"B"`
   - Multiple columns as an array: `["B", "C"]` for composite keys
   - When using composite keys, if ANY column contains null/empty values, the row is skipped
   - **If omitted**: Results are returned as an array/list instead of a dictionary
 * `unique_id_separator` (optional): The separator to use when joining multiple columns for composite keys. Defaults to `"_"`.
-* `columns`: A dictionary where the keys are the column names and the values are the column letters (e.g., "B", "C", etc.).
+* `columns`: A dictionary where the keys are the column names and the values are the column letters (e.g., `"B"`, `"C"`).
 * `stop_if_empty` (optional): Controls when to stop processing rows. Can be:
   - A column string: `"A"` - Stop when this column is empty
   - An array of columns: `["A", "B"]` - Stop when ALL specified columns are empty
   - The string `"row"` - Stop when the entire data row is empty
   - An object with detailed configuration:
     ```python
-    {
-        "column": "A",        # or ["A", "B"] for multiple columns
-        "consecutive": 2      # Number of consecutive empty rows/columns to trigger stop
-    }
+    {"column": "A", "consecutive": 2}
     ```
     or
     ```python
-    {
-        "mode": "row",        # "row" or "column"
-        "consecutive": 1      # Default is 1
-    }
+    {"mode": "row", "consecutive": 1}
     ```
 * `stop_consecutive` (optional): Used with simple `stop_if_empty` syntax to specify how many consecutive empty rows trigger a stop. Defaults to `1`.
 
 **Example with single unique_id:**
 ```python
 {
-    "sheets": ["Sheet 1", "Sheet 2"], # List of sheets to loop through
-    "extractions": [ # List of extractions to attempt
+    "sheets": ["Sheet 1", "Sheet 2"],
+    "extractions": [
         {
-            "function": "multirow_patterns", # Function type
-            "label": "deposits", # Optional label that defines a parent key
-            "instructions": { # Instructions for selected function
-                "row_range": [1, 10], # Range of rows to iterate through
-                "unique_id": "B", # Single column as unique identifier
-                "columns": { # Columns to extract data from, keys are used as value title.
+            "function": "multirow_patterns",
+            "label": "deposits",
+            "instructions": {
+                "row_range": [1, 10],
+                "unique_id": "B",
+                "columns": {
                     "Title": "B",
                     "Description": "C",
                     "Estimate": "D",
@@ -158,8 +180,8 @@ The `multirow_patterns` extraction rule extracts data from multiple rows in the 
             "label": "projects",
             "instructions": {
                 "row_range": [1, 50],
-                "unique_id": ["B", "C"],  # Composite key from columns B and C
-                "unique_id_separator": "-",  # Optional: use "-" instead of default "_"
+                "unique_id": ["B", "C"],
+                "unique_id_separator": "-",
                 "columns": {
                     "Project": "B",
                     "Year": "C",
@@ -182,7 +204,7 @@ The `multirow_patterns` extraction rule extracts data from multiple rows in the 
             "label": "items",
             "instructions": {
                 "row_range": [1, 1000],
-                "stop_if_empty": "A",  # Stop when column A is empty
+                "stop_if_empty": "A",
                 "columns": {
                     "Name": "A",
                     "Value": "B",
@@ -206,7 +228,7 @@ The `multirow_patterns` extraction rule extracts data from multiple rows in the 
             "instructions": {
                 "row_range": [1, 100],
                 "stop_if_empty": "A",
-                "stop_consecutive": 3,  # Tolerate up to 2 empty rows
+                "stop_consecutive": 3,
                 "columns": {
                     "ID": "A",
                     "Value": "B"
@@ -253,7 +275,7 @@ The `multirow_patterns` extraction rule extracts data from multiple rows in the 
             "instructions": {
                 "row_range": [1, 1000],
                 "unique_id": "A",
-                "stop_if_empty": ["A", "B"],  # Stop when both ID and Date are empty
+                "stop_if_empty": ["A", "B"],
                 "columns": {
                     "ID": "A",
                     "Date": "B",
@@ -265,36 +287,47 @@ The `multirow_patterns` extraction rule extracts data from multiple rows in the 
 }
 ```
 
-#### Dataframe Extraction
-The dataframe extraction rule extracts tabular data with headers, returning JSON that can easily be converted to a Pandas DataFrame.
+### Dataframe Extraction
+
+Extracts tabular data with headers, returning JSON that can easily be converted to a Pandas DataFrame.
 
 **Instructions:**
-
 * `row_range`: A list of two integers defining the row range to extract.
 * `column_range`: A list of column letters to extract.
 * `header_row`: A list of row numbers to use as the header.
-* `separator`: Optional separator to use when combining header cells (default " ").
+* `separator`: Optional separator to use when combining header cells (default `" "`).
 
 **Example:**
 ```python
 {
-    "sheets": ["School_*"],  # List of sheets to loop through
-    "extractions": [ # List of extractions to attempt
+    "sheets": ["School_*"],
+    "extractions": [
         {
-            "function": "dataframe", # Function type
-            "label": "DataFrame", # Optional label that defines a parent key
-            "instructions": { # Instructions for selected function
-                "row_range": [5, 15], # Range of rows where data is extracted from
-                "column_range": ["B", "F"], # Range of columns to extract headers and data
-                "header_row": [2, 3, 4], # List of rows that contain header data (will be concatenated to a string)
-                "separator": " ", # Optional separator specifier (defaults to " ")
+            "function": "dataframe",
+            "label": "DataFrame",
+            "instructions": {
+                "row_range": [5, 15],
+                "column_range": ["B", "F"],
+                "header_row": [2, 3, 4],
+                "separator": " ",
             }
         }
     ]
 }
 ```
 
-By following this guide, you should be able to use the `sheet_excavator` library to extract data from your Excel sheets. The data is returned as json_formatted string.
+## Contributing
+
+Contributions are welcome! Please feel free to submit issues and pull requests.
+
+```bash
+# Development setup
+pip install maturin pytest openpyxl ruff
+maturin develop --release
+make lint   # check formatting
+make test   # run tests
+```
 
 ## License
-Sheet Excavator is released under the MIT License. See the LICENSE file for more details.
+
+Sheet Excavator is released under the MIT License. See the [LICENSE](LICENSE) file for more details.
