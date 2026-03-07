@@ -28,6 +28,8 @@ classifiers = [
 dynamic = ["version"]
 [tool.maturin]
 features = ["pyo3/extension-module"]
+python-source = "python"
+module-name = "sheet_excavator._sheet_excavator"
 
 [project.urls]
 Homepage = "https://github.com/kkollsga/sheet-excavator"
