@@ -16,7 +16,7 @@ name = "_sheetio"
 crate-type = ["cdylib"]
 
 [dependencies]
-anyhow = "1.0.97"
+anyhow = "1.0.102"
 calamine = "0.26.1"
 chrono = "0.4.40"
 futures = "0.3.31"
