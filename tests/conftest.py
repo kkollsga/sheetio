@@ -3,9 +3,9 @@
 import json
 from datetime import datetime
 
+import pytest
 from openpyxl import Workbook
 
-import pytest
 import sheet_excavator
 
 

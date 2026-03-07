@@ -1,8 +1,7 @@
 """Tests for edge cases and advanced features."""
 
-from conftest import run_extract
-
 import pytest
+from conftest import run_extract
 
 
 def test_wildcard_sheet_matching(tmp_excel_multisheet):
