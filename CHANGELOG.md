@@ -1,0 +1,40 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.2.4] - 2026-01-30
+
+### Changed
+
+- Performance optimizations: Arc sharing for extraction config, pre-parsed config structs, HashSet/IndexSet for lookups
+- Python 3.10+ requirement
+
+## [0.2.3] - 2025-10-14
+
+### Added
+
+- Composite unique_id support for multirow patterns (array of column letters)
+- Custom unique_id_separator option
+- Optional unique_id (omit to get array output instead of dict)
+- stop_if_empty support with column, row, and consecutive modes
+
+## [0.2.0] - 2025-03-11
+
+### Added
+
+- Initial public release
+- Three extraction functions: single_cells, multirow_patterns, dataframe
+- Wildcard sheet matching with glob patterns
+- Parallel file processing with configurable worker count
+- break_if_null and skip_sheets support
+- GitHub Actions workflow for building and publishing wheels
+
+[Unreleased]: https://github.com/kkollsga/sheet-excavator/compare/v0.2.4...HEAD
+[0.2.4]: https://github.com/kkollsga/sheet-excavator/compare/v0.2.3...v0.2.4
+[0.2.3]: https://github.com/kkollsga/sheet-excavator/compare/v0.2.0...v0.2.3
+[0.2.0]: https://github.com/kkollsga/sheet-excavator/releases/tag/v0.2.0
