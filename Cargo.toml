@@ -21,6 +21,6 @@ calamine = "0.26.1"
 chrono = "0.4.40"
 futures = "0.3.31"
 indexmap = "2.8.0"
-pyo3 = "0.27.2"
+pyo3 = "0.28.2"
 serde_json = { version = "1.0.140", features = ["preserve_order"] }
 tokio = {version = "1.44.0", features = ["full"] }
