@@ -70,3 +70,7 @@ docs/_build/
 
 # Pyenv
 .python-version
+
+# Project-specific
+design_document.md
+todo.md
