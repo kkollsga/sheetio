@@ -95,3 +95,33 @@ def test_invalid_column_in_unique_id(tmp_path):
     # ZZZ is valid column notation, so this doesn't error - it just finds no matching data
     result = json.loads(sheet_excavator.excel_extract([str(filepath)], config, 1))
     assert isinstance(result, dict)
+
+
+def test_non_string_in_unique_id_array(tmp_path):
+    """unique_id: ["B", 123] -- non-string value in array should error."""
+    from openpyxl import Workbook
+
+    filepath = tmp_path / "non_string.xlsx"
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Sheet1"
+    ws["A1"] = "data"
+    wb.save(filepath)
+
+    config = [
+        {
+            "sheets": ["Sheet1"],
+            "extractions": [
+                {
+                    "function": "multirow_patterns",
+                    "instructions": {
+                        "row_range": [1, 10],
+                        "unique_id": ["B", 123],
+                        "columns": {"val": "A"},
+                    },
+                }
+            ],
+        }
+    ]
+    with pytest.raises(Exception):
+        sheet_excavator.excel_extract([str(filepath)], config, 1)

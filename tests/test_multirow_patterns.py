@@ -328,6 +328,55 @@ def test_duplicate_key_dedup(tmp_excel_duplicates):
     assert "DUPLICATE_KEY_99" in data
 
 
+def test_triple_composite_key(tmp_path):
+    """Three-column composite key."""
+    from openpyxl import Workbook
+
+    filepath = tmp_path / "triple.xlsx"
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Sheet1"
+    data = [
+        ("Region1", "Dept1", 2024, 100),
+        ("Region1", "Dept1", 2025, 200),
+        ("Region1", "Dept2", 2024, 300),
+        ("Region2", "Dept1", 2024, 400),
+    ]
+    for row_idx, (region, dept, year, value) in enumerate(data, start=1):
+        ws.cell(row=row_idx, column=1, value=region)
+        ws.cell(row=row_idx, column=2, value=dept)
+        ws.cell(row=row_idx, column=3, value=year)
+        ws.cell(row=row_idx, column=4, value=value)
+    wb.save(filepath)
+
+    config = [
+        {
+            "sheets": ["Sheet1"],
+            "extractions": [
+                {
+                    "function": "multirow_patterns",
+                    "label": "data",
+                    "instructions": {
+                        "row_range": [1, 10],
+                        "unique_id": ["A", "B", "C"],
+                        "unique_id_separator": "|",
+                        "columns": {"Region": "A", "Dept": "B", "Year": "C", "Value": "D"},
+                    },
+                }
+            ],
+        }
+    ]
+    result = run_extract([str(filepath)], config)
+    file_key = list(result.keys())[0]
+    data = result[file_key]["Sheet1"]["data"]
+
+    assert isinstance(data, dict)
+    assert len(data) == 4
+    # Keys should contain | separator
+    keys = list(data.keys())
+    assert all("|" in k for k in keys)
+
+
 def test_column_merge(tmp_path):
     """Multiple columns per field ["X","Y","Z"]."""
     from openpyxl import Workbook
