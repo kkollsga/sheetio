@@ -71,6 +71,9 @@ docs/_build/
 # Pyenv
 .python-version
 
+# MkDocs
+site/
+
 # Project-specific
 design_document.md
 todo.md
