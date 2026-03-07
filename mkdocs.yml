@@ -34,6 +34,7 @@ plugins:
   - mkdocstrings:
       handlers:
         python:
+          paths: [python]
           options:
             show_source: false
             show_root_heading: true
@@ -48,6 +49,7 @@ markdown_extensions:
       alternate_style: true
   - admonition
   - pymdownx.details
-  - pymdownx.snippets
+  - pymdownx.snippets:
+      base_path: ["."]
   - toc:
       permalink: true
