@@ -46,3 +46,15 @@ select = ["E", "F", "I", "W"]
 "tests/*" = ["E402"]
 "pytest/*" = ["E402"]
 "*.ipynb" = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["slow: marks tests as slow (deselect with '-m \"not slow\"')"]
+strict_markers = true
+
+[tool.coverage.run]
+source = ["sheet_excavator"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
