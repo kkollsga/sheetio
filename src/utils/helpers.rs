@@ -1,5 +1,5 @@
-use serde_json::{Map, Value};
 use indexmap::IndexMap;
+use serde_json::{Map, Value};
 
 /// Generates a unique key by appending _1, _2, etc. if the base key already exists.
 ///

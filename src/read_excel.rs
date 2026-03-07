@@ -1,15 +1,21 @@
-use calamine::{Reader, open_workbook_auto};
+use crate::utils::{
+    conversions, dataframe, helpers, manipulations, match_sheet_names, multirow_patterns,
+    single_cells,
+};
+use anyhow::{Error, Result};
+use calamine::{open_workbook_auto, Reader};
+use indexmap::IndexSet;
 use serde_json::{Map, Value};
-use anyhow::{Result, Error};
 use std::collections::HashSet;
 use std::sync::Arc;
-use indexmap::IndexSet;
-use crate::utils::{conversions, manipulations, dataframe, single_cells, multirow_patterns, match_sheet_names, helpers};
 
 /// Process a single Excel file with the given extraction configurations.
 ///
 /// Accepts Arc<Vec<Value>> to avoid deep cloning the config for each file (Bottleneck #1 fix).
-pub async fn process_file(file_path: String, extraction_details: Arc<Vec<Value>>) -> Result<Value, Error> {
+pub async fn process_file(
+    file_path: String,
+    extraction_details: Arc<Vec<Value>>,
+) -> Result<Value, Error> {
     let mut results = Map::new();
     results.insert("filepath".to_string(), Value::String(file_path.clone()));
 
@@ -33,7 +39,8 @@ pub async fn process_file(file_path: String, extraction_details: Arc<Vec<Value>>
         if let Some(sheets) = map.get("sheets") {
             if let Some(sheets_array) = sheets.as_array() {
                 // Use HashSet for O(1) skip_sheets lookups instead of O(n) linear search
-                let skip_sheets: HashSet<String> = map.get("skip_sheets")
+                let skip_sheets: HashSet<String> = map
+                    .get("skip_sheets")
                     .and_then(|v| v.as_array())
                     .map(|arr| {
                         arr.iter()
@@ -45,7 +52,9 @@ pub async fn process_file(file_path: String, extraction_details: Arc<Vec<Value>>
                 for sheet in sheets_array {
                     if let Some(sheet_str) = sheet.as_str() {
                         if sheet_str.contains('*') {
-                            for sheet_name in match_sheet_names(&workbook.sheet_names().to_vec(), sheet_str) {
+                            for sheet_name in
+                                match_sheet_names(&workbook.sheet_names().to_vec(), sheet_str)
+                            {
                                 if !skip_sheets.contains(&sheet_name) {
                                     sheet_names.insert(sheet_name);
                                 }
@@ -71,19 +80,26 @@ pub async fn process_file(file_path: String, extraction_details: Arc<Vec<Value>>
         let extractions = map
             .get("extractions")
             .and_then(|extr| extr.as_array())
-            .ok_or_else(|| Error::msg("Missing or invalid \"extractions\" key in extraction details"))?
+            .ok_or_else(|| {
+                Error::msg("Missing or invalid \"extractions\" key in extraction details")
+            })?
             .iter()
             .map(|extr| {
-                let obj = extr.as_object().ok_or_else(|| Error::msg("Each extraction should be a JSON object"))?;
-                let function = obj.get("function")
+                let obj = extr
+                    .as_object()
+                    .ok_or_else(|| Error::msg("Each extraction should be a JSON object"))?;
+                let function = obj
+                    .get("function")
                     .and_then(|f| f.as_str())
                     .ok_or_else(|| Error::msg("Missing 'function' key"))?
                     .to_string();
-                let function_label = obj.get("label")
+                let function_label = obj
+                    .get("label")
                     .and_then(|f| f.as_str())
                     .unwrap_or("") // Provide "" as default if 'label' is missing
                     .to_string();
-                let instructions = obj.get("instructions")
+                let instructions = obj
+                    .get("instructions")
                     .and_then(|i| i.as_object())
                     .cloned()
                     .ok_or_else(|| Error::msg("Missing 'instructions' key"))?;
@@ -95,7 +111,10 @@ pub async fn process_file(file_path: String, extraction_details: Arc<Vec<Value>>
                 Ok(sheet) => sheet,
                 Err(_) => {
                     let base_filename = conversions::extract_filename(&file_path);
-                    println!("{}: Sheet '{}' not found, skipping extraction.", base_filename, sheet_name);
+                    println!(
+                        "{}: Sheet '{}' not found, skipping extraction.",
+                        base_filename, sheet_name
+                    );
                     continue;
                 }
             };
@@ -116,7 +135,7 @@ pub async fn process_file(file_path: String, extraction_details: Arc<Vec<Value>>
             for (function, label, instructions) in &extractions {
                 match function.as_str() {
                     "single_cells" => {
-                        let cells_object = single_cells::extract_values(&sheet, &instructions)?;
+                        let cells_object = single_cells::extract_values(&sheet, instructions)?;
 
                         if label.is_empty() {
                             for (key, value) in cells_object {
@@ -124,19 +143,19 @@ pub async fn process_file(file_path: String, extraction_details: Arc<Vec<Value>>
                                 let unique_key = helpers::make_unique_key(&sheet_results, &key);
                                 sheet_results.insert(unique_key, value);
                             }
-                        } else {
-                            if let Some(Value::Object(existing_map)) = sheet_results.get_mut(label.as_str()) {
-                                for (key, value) in cells_object {
-                                    existing_map.insert(key, value);
-                                }
-                            } else {
-                                let value: Value = cells_object.into_iter().collect();
-                                sheet_results.insert(label.clone(), value);
+                        } else if let Some(Value::Object(existing_map)) =
+                            sheet_results.get_mut(label.as_str())
+                        {
+                            for (key, value) in cells_object {
+                                existing_map.insert(key, value);
                             }
+                        } else {
+                            let value: Value = cells_object.into_iter().collect();
+                            sheet_results.insert(label.clone(), value);
                         }
                     }
                     "multirow_patterns" => {
-                        let result_value = multirow_patterns::extract_rows(&sheet, &instructions)?;
+                        let result_value = multirow_patterns::extract_rows(&sheet, instructions)?;
 
                         if label.is_empty() {
                             // If no label, try to merge the result into sheet_results
@@ -144,19 +163,23 @@ pub async fn process_file(file_path: String, extraction_details: Arc<Vec<Value>>
                                 Value::Object(obj) => {
                                     for (key, value) in obj {
                                         // Use helper function for unique key generation
-                                        let unique_key = helpers::make_unique_key(&sheet_results, &key);
+                                        let unique_key =
+                                            helpers::make_unique_key(&sheet_results, &key);
                                         sheet_results.insert(unique_key, value);
                                     }
                                 }
                                 Value::Array(_) => {
                                     // For array results without label, use function name as key
-                                    sheet_results.insert("multirow_patterns".to_string(), result_value);
+                                    sheet_results
+                                        .insert("multirow_patterns".to_string(), result_value);
                                 }
                                 _ => {}
                             }
                         } else {
                             // With label, store the result directly under the label
-                            if let Some(Value::Object(existing_map)) = sheet_results.get_mut(label.as_str()) {
+                            if let Some(Value::Object(existing_map)) =
+                                sheet_results.get_mut(label.as_str())
+                            {
                                 // If label already exists as object, try to merge
                                 match result_value {
                                     Value::Object(obj) => {
@@ -175,7 +198,7 @@ pub async fn process_file(file_path: String, extraction_details: Arc<Vec<Value>>
                         }
                     }
                     "dataframe" => {
-                        let cells_object = dataframe::extract_dataframe(&sheet, &instructions)?;
+                        let cells_object = dataframe::extract_dataframe(&sheet, instructions)?;
 
                         if label.is_empty() {
                             for (key, value) in cells_object {
@@ -183,15 +206,15 @@ pub async fn process_file(file_path: String, extraction_details: Arc<Vec<Value>>
                                 let unique_key = helpers::make_unique_key(&sheet_results, &key);
                                 sheet_results.insert(unique_key, value);
                             }
-                        } else {
-                            if let Some(Value::Object(existing_map)) = sheet_results.get_mut(label.as_str()) {
-                                for (key, value) in cells_object {
-                                    existing_map.insert(key, value);
-                                }
-                            } else {
-                                let value: Value = cells_object.into_iter().collect();
-                                sheet_results.insert(label.clone(), value);
+                        } else if let Some(Value::Object(existing_map)) =
+                            sheet_results.get_mut(label.as_str())
+                        {
+                            for (key, value) in cells_object {
+                                existing_map.insert(key, value);
                             }
+                        } else {
+                            let value: Value = cells_object.into_iter().collect();
+                            sheet_results.insert(label.clone(), value);
                         }
                     }
                     _ => {

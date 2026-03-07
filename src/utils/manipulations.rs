@@ -1,15 +1,20 @@
-use std::borrow::Cow;
-use anyhow::{Result, Error};
-use calamine::{Range, Data};
-use serde_json::{Value, Number};
 use crate::utils::conversions;
+use anyhow::{Error, Result};
+use calamine::{Data, Range};
+use serde_json::{Number, Value};
+use std::borrow::Cow;
 
 /// Extract a cell value from the sheet.
 ///
 /// Returns a tuple of (Option<Value>, type_description).
 /// The type_description uses Cow<'static, str> to avoid allocations for static strings.
-pub fn extract_cell_value(sheet: &Range<Data>, row: u32, col: u32, force_str: bool) -> Result<(Option<Value>, Cow<'static, str>), Error> {
-    let cell = sheet.get_value((row-1, col));
+pub fn extract_cell_value(
+    sheet: &Range<Data>,
+    row: u32,
+    col: u32,
+    force_str: bool,
+) -> Result<(Option<Value>, Cow<'static, str>), Error> {
+    let cell = sheet.get_value((row - 1, col));
     if cell.is_none() {
         return Ok((None, Cow::Borrowed("Null")));
     }
@@ -30,7 +35,7 @@ pub fn extract_cell_value(sheet: &Range<Data>, row: u32, col: u32, force_str: bo
                 } else {
                     trimmed.to_string()
                 }
-            },
+            }
             Data::Error(_) => return Err(Error::msg("Error in cell")),
             Data::DateTime(dt) => conversions::excel_datetime(dt.as_f64())?,
             Data::DurationIso(duration_iso) => duration_iso.to_string(),
@@ -42,7 +47,10 @@ pub fn extract_cell_value(sheet: &Range<Data>, row: u32, col: u32, force_str: bo
 
     let result = match cell {
         Data::Empty => (Some(Value::Null), Cow::Borrowed("Null")),
-        Data::Int(int_val) => (Some(Value::Number(Number::from(*int_val))), Cow::Borrowed("Int")),
+        Data::Int(int_val) => (
+            Some(Value::Number(Number::from(*int_val))),
+            Cow::Borrowed("Int"),
+        ),
         Data::Float(float_val) => match Number::from_f64(*float_val) {
             Some(number) => (Some(Value::Number(number)), Cow::Borrowed("Float")),
             None => return Err(Error::msg("Invalid float value")),
@@ -57,7 +65,7 @@ pub fn extract_cell_value(sheet: &Range<Data>, row: u32, col: u32, force_str: bo
                 trimmed.to_string()
             };
             (Some(Value::String(result_str)), Cow::Borrowed("String"))
-        },
+        }
         Data::Error(_) => return Err(Error::msg("Error in cell")),
         Data::DateTime(dt) => (
             Some(Value::String(conversions::excel_datetime(dt.as_f64())?)),
@@ -76,14 +84,17 @@ pub fn extract_headers(
     sheet: &Range<Data>,
     header_rows: &[u32], // Array of row indices
     column: u32,         // Column index
-    separator: &str      // Separator to join headers
+    separator: &str,     // Separator to join headers
 ) -> Result<String, Error> {
     let mut headers = Vec::new();
 
     for &row in header_rows {
         let (_, header_description) = extract_cell_value(sheet, row, column, true)?; // Force string extraction
-        // Replace carriage returns and new lines with a space
-        let clean_header = header_description.replace("\r\n", " ").replace("\n", " ").replace("\r", " ");
+                                                                                     // Replace carriage returns and new lines with a space
+        let clean_header = header_description
+            .replace("\r\n", " ")
+            .replace("\n", " ")
+            .replace("\r", " ");
         headers.push(clean_header);
     }
 
@@ -95,7 +106,7 @@ pub fn extract_column_data(
     sheet: &Range<Data>,
     column: u32,
     start_row: u32,
-    end_row: u32
+    end_row: u32,
 ) -> Result<Value, Error> {
     let mut column_data: Vec<Value> = Vec::new();
 

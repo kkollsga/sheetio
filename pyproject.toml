@@ -31,3 +31,18 @@ features = ["pyo3/extension-module"]
 
 [project.urls]
 Homepage = "https://github.com/kkollsga/sheet-excavator"
+Repository = "https://github.com/kkollsga/sheet-excavator"
+Issues = "https://github.com/kkollsga/sheet-excavator/issues"
+Changelog = "https://github.com/kkollsga/sheet-excavator/blob/main/CHANGELOG.md"
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E402"]
+"pytest/*" = ["E402"]
+"*.ipynb" = ["E501"]

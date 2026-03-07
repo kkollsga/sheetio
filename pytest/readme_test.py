@@ -10,11 +10,12 @@ Tests all usage patterns documented in the README file by:
 Run with: python pytest/readme_test.py
 """
 
-import sheet_excavator
 import json
 import os
 import tempfile
 from datetime import datetime
+
+import sheet_excavator
 from openpyxl import Workbook
 
 
@@ -64,31 +65,33 @@ class ReadmeTestSuite:
         ws.title = "Sheet1"
 
         # Set up data matching README example
-        ws['A1'] = "Title Value"
-        ws['B2'] = "Description Text"
-        ws['C3'] = 12345
-        ws['D4'] = datetime(2024, 6, 15)
-        ws['E5'] = datetime(2024, 6, 15, 14, 30, 0)
+        ws["A1"] = "Title Value"
+        ws["B2"] = "Description Text"
+        ws["C3"] = 12345
+        ws["D4"] = datetime(2024, 6, 15)
+        ws["E5"] = datetime(2024, 6, 15, 14, 30, 0)
 
         wb.save(filepath)
 
         # README example config
-        config = [{
-            "sheets": ["Sheet1"],
-            "extractions": [
-                {
-                    "function": "single_cells",
-                    "label": "single",
-                    "instructions": {
-                        "Value 1": "a1",
-                        "Value 2": "b2",
-                        "Value 3": "c3",
-                        "Date": "d4",
-                        "Datetime": "e5"
+        config = [
+            {
+                "sheets": ["Sheet1"],
+                "extractions": [
+                    {
+                        "function": "single_cells",
+                        "label": "single",
+                        "instructions": {
+                            "Value 1": "a1",
+                            "Value 2": "b2",
+                            "Value 3": "c3",
+                            "Date": "d4",
+                            "Datetime": "e5",
+                        },
                     }
-                }
-            ]
-        }]
+                ],
+            }
+        ]
 
         result = self._run_extraction([filepath], config)
 
@@ -120,24 +123,22 @@ class ReadmeTestSuite:
         # Sheet1 has C3 empty - should trigger break
         ws1 = wb.active
         ws1.title = "Sheet1"
-        ws1['A1'] = "Value A"
+        ws1["A1"] = "Value A"
         # C3 intentionally empty - triggers break_if_null
 
         # Sheet2 should not be processed because Sheet1 breaks
         ws2 = wb.create_sheet("Sheet2")
-        ws2['A1'] = "Value B"
-        ws2['C3'] = "Not Null"
+        ws2["A1"] = "Value B"
+        ws2["C3"] = "Not Null"
 
         wb.save(filepath)
 
-        config = [{
-            "sheets": ["Sheet1", "Sheet2"],
-            "extractions": [{
-                "function": "single_cells",
-                "break_if_null": "c3",
-                "instructions": {"test": "a1"}
-            }]
-        }]
+        config = [
+            {
+                "sheets": ["Sheet1", "Sheet2"],
+                "extractions": [{"function": "single_cells", "break_if_null": "c3", "instructions": {"test": "a1"}}],
+            }
+        ]
 
         result = self._run_extraction([filepath], config)
         file_key = list(result.keys())[0]
@@ -183,23 +184,27 @@ class ReadmeTestSuite:
         wb.save(filepath)
 
         # README example config
-        config = [{
-            "sheets": ["Sheet 1"],
-            "extractions": [{
-                "function": "multirow_patterns",
-                "label": "deposits",
-                "instructions": {
-                    "row_range": [1, 10],
-                    "unique_id": "B",
-                    "columns": {
-                        "Title": "B",
-                        "Description": "C",
-                        "Estimate": "D",
-                        "Chance": "E",
+        config = [
+            {
+                "sheets": ["Sheet 1"],
+                "extractions": [
+                    {
+                        "function": "multirow_patterns",
+                        "label": "deposits",
+                        "instructions": {
+                            "row_range": [1, 10],
+                            "unique_id": "B",
+                            "columns": {
+                                "Title": "B",
+                                "Description": "C",
+                                "Estimate": "D",
+                                "Chance": "E",
+                            },
+                        },
                     }
-                }
-            }]
-        }]
+                ],
+            }
+        ]
 
         result = self._run_extraction([filepath], config)
         file_key = list(result.keys())[0]
@@ -244,24 +249,23 @@ class ReadmeTestSuite:
         wb.save(filepath)
 
         # README example config with composite unique_id
-        config = [{
-            "sheets": ["Sheet 1"],
-            "extractions": [{
-                "function": "multirow_patterns",
-                "label": "projects",
-                "instructions": {
-                    "row_range": [1, 50],
-                    "unique_id": ["B", "C"],
-                    "unique_id_separator": "-",
-                    "columns": {
-                        "Project": "B",
-                        "Year": "C",
-                        "Budget": "D",
-                        "Status": "E"
+        config = [
+            {
+                "sheets": ["Sheet 1"],
+                "extractions": [
+                    {
+                        "function": "multirow_patterns",
+                        "label": "projects",
+                        "instructions": {
+                            "row_range": [1, 50],
+                            "unique_id": ["B", "C"],
+                            "unique_id_separator": "-",
+                            "columns": {"Project": "B", "Year": "C", "Budget": "D", "Status": "E"},
+                        },
                     }
-                }
-            }]
-        }]
+                ],
+            }
+        ]
 
         result = self._run_extraction([filepath], config)
         file_key = list(result.keys())[0]
@@ -269,8 +273,9 @@ class ReadmeTestSuite:
 
         self._assert_true(isinstance(projects, dict), "Result is dictionary")
         self._assert_equal(len(projects), 4, "Four items extracted")
-        self._assert_true("ProjectA-2024" in projects or "ProjectA-2024.0" in projects,
-                         "Composite key ProjectA-2024 exists")
+        self._assert_true(
+            "ProjectA-2024" in projects or "ProjectA-2024.0" in projects, "Composite key ProjectA-2024 exists"
+        )
 
         print(f"  Extracted {len(projects)} items with composite keys")
         print(f"  Keys: {list(projects.keys())}")
@@ -309,22 +314,22 @@ class ReadmeTestSuite:
         wb.save(filepath)
 
         # README example config without unique_id
-        config = [{
-            "sheets": ["Sheet 1"],
-            "extractions": [{
-                "function": "multirow_patterns",
-                "label": "items",
-                "instructions": {
-                    "row_range": [1, 1000],
-                    "stop_if_empty": "A",
-                    "columns": {
-                        "Name": "A",
-                        "Value": "B",
-                        "Description": "C"
+        config = [
+            {
+                "sheets": ["Sheet 1"],
+                "extractions": [
+                    {
+                        "function": "multirow_patterns",
+                        "label": "items",
+                        "instructions": {
+                            "row_range": [1, 1000],
+                            "stop_if_empty": "A",
+                            "columns": {"Name": "A", "Value": "B", "Description": "C"},
+                        },
                     }
-                }
-            }]
-        }]
+                ],
+            }
+        ]
 
         result = self._run_extraction([filepath], config)
         file_key = list(result.keys())[0]
@@ -352,36 +357,37 @@ class ReadmeTestSuite:
         ws.title = "Sheet 1"
 
         # Data with gaps
-        ws['A1'] = "ID001"
-        ws['B1'] = 100
-        ws['A2'] = "ID002"
-        ws['B2'] = 200
+        ws["A1"] = "ID001"
+        ws["B1"] = 100
+        ws["A2"] = "ID002"
+        ws["B2"] = 200
         # Row 3 empty (gap)
-        ws['A4'] = "ID003"
-        ws['B4'] = 300
+        ws["A4"] = "ID003"
+        ws["B4"] = 300
         # Rows 5, 6, 7 empty (3 consecutive = stop)
-        ws['A8'] = "ID004"  # Should not be extracted
-        ws['B8'] = 400
+        ws["A8"] = "ID004"  # Should not be extracted
+        ws["B8"] = 400
 
         wb.save(filepath)
 
         # README example config with stop_consecutive
-        config = [{
-            "sheets": ["Sheet 1"],
-            "extractions": [{
-                "function": "multirow_patterns",
-                "label": "data",
-                "instructions": {
-                    "row_range": [1, 100],
-                    "stop_if_empty": "A",
-                    "stop_consecutive": 3,  # Tolerate up to 2 empty rows
-                    "columns": {
-                        "ID": "A",
-                        "Value": "B"
+        config = [
+            {
+                "sheets": ["Sheet 1"],
+                "extractions": [
+                    {
+                        "function": "multirow_patterns",
+                        "label": "data",
+                        "instructions": {
+                            "row_range": [1, 100],
+                            "stop_if_empty": "A",
+                            "stop_consecutive": 3,  # Tolerate up to 2 empty rows
+                            "columns": {"ID": "A", "Value": "B"},
+                        },
                     }
-                }
-            }]
-        }]
+                ],
+            }
+        ]
 
         result = self._run_extraction([filepath], config)
         file_key = list(result.keys())[0]
@@ -408,39 +414,36 @@ class ReadmeTestSuite:
         ws.title = "Sheet 1"
 
         # Data where column A might be empty but row has other data
-        ws['A1'] = "ID001"
-        ws['B1'] = "Name1"
-        ws['C1'] = 100
-        ws['A2'] = None  # Column A empty
-        ws['B2'] = "Name2"  # But row has data
-        ws['C2'] = 200
-        ws['A3'] = "ID003"
-        ws['B3'] = "Name3"
-        ws['C3'] = 300
+        ws["A1"] = "ID001"
+        ws["B1"] = "Name1"
+        ws["C1"] = 100
+        ws["A2"] = None  # Column A empty
+        ws["B2"] = "Name2"  # But row has data
+        ws["C2"] = 200
+        ws["A3"] = "ID003"
+        ws["B3"] = "Name3"
+        ws["C3"] = 300
         # Row 4 completely empty - should stop
 
         wb.save(filepath)
 
         # README example config with row mode
-        config = [{
-            "sheets": ["Sheet 1"],
-            "extractions": [{
-                "function": "multirow_patterns",
-                "label": "records",
-                "instructions": {
-                    "row_range": [1, 500],
-                    "stop_if_empty": {
-                        "mode": "row",
-                        "consecutive": 1
-                    },
-                    "columns": {
-                        "Field1": "A",
-                        "Field2": "B",
-                        "Field3": "C"
+        config = [
+            {
+                "sheets": ["Sheet 1"],
+                "extractions": [
+                    {
+                        "function": "multirow_patterns",
+                        "label": "records",
+                        "instructions": {
+                            "row_range": [1, 500],
+                            "stop_if_empty": {"mode": "row", "consecutive": 1},
+                            "columns": {"Field1": "A", "Field2": "B", "Field3": "C"},
+                        },
                     }
-                }
-            }]
-        }]
+                ],
+            }
+        ]
 
         result = self._run_extraction([filepath], config)
         file_key = list(result.keys())[0]
@@ -467,37 +470,37 @@ class ReadmeTestSuite:
         ws.title = "Sheet 1"
 
         # Data where we need both A and B empty to stop
-        ws['A1'] = "ID001"
-        ws['B1'] = datetime(2024, 1, 15)
-        ws['C1'] = 100
-        ws['A2'] = None  # A empty but B has data
-        ws['B2'] = datetime(2024, 2, 15)
-        ws['C2'] = 200
-        ws['A3'] = "ID003"
-        ws['B3'] = None  # B empty but A has data
-        ws['C3'] = 300
+        ws["A1"] = "ID001"
+        ws["B1"] = datetime(2024, 1, 15)
+        ws["C1"] = 100
+        ws["A2"] = None  # A empty but B has data
+        ws["B2"] = datetime(2024, 2, 15)
+        ws["C2"] = 200
+        ws["A3"] = "ID003"
+        ws["B3"] = None  # B empty but A has data
+        ws["C3"] = 300
         # Row 4: both A and B empty - should stop
 
         wb.save(filepath)
 
         # README example config with multiple column monitoring
-        config = [{
-            "sheets": ["Sheet 1"],
-            "extractions": [{
-                "function": "multirow_patterns",
-                "label": "transactions",
-                "instructions": {
-                    "row_range": [1, 1000],
-                    "unique_id": "A",
-                    "stop_if_empty": ["A", "B"],
-                    "columns": {
-                        "ID": "A",
-                        "Date": "B",
-                        "Amount": "C"
+        config = [
+            {
+                "sheets": ["Sheet 1"],
+                "extractions": [
+                    {
+                        "function": "multirow_patterns",
+                        "label": "transactions",
+                        "instructions": {
+                            "row_range": [1, 1000],
+                            "unique_id": "A",
+                            "stop_if_empty": ["A", "B"],
+                            "columns": {"ID": "A", "Date": "B", "Amount": "C"},
+                        },
                     }
-                }
-            }]
-        }]
+                ],
+            }
+        ]
 
         result = self._run_extraction([filepath], config)
         file_key = list(result.keys())[0]
@@ -524,23 +527,23 @@ class ReadmeTestSuite:
         ws.title = "School_A"
 
         # Multi-row header (rows 2-4)
-        ws['B2'] = "Student"
-        ws['C2'] = "Math"
-        ws['D2'] = "Science"
-        ws['E2'] = "English"
-        ws['F2'] = "Total"
+        ws["B2"] = "Student"
+        ws["C2"] = "Math"
+        ws["D2"] = "Science"
+        ws["E2"] = "English"
+        ws["F2"] = "Total"
 
-        ws['B3'] = "Information"
-        ws['C3'] = "Score"
-        ws['D3'] = "Score"
-        ws['E3'] = "Score"
-        ws['F3'] = "Score"
+        ws["B3"] = "Information"
+        ws["C3"] = "Score"
+        ws["D3"] = "Score"
+        ws["E3"] = "Score"
+        ws["F3"] = "Score"
 
-        ws['B4'] = "Name"
-        ws['C4'] = "(100)"
-        ws['D4'] = "(100)"
-        ws['E4'] = "(100)"
-        ws['F4'] = "(300)"
+        ws["B4"] = "Name"
+        ws["C4"] = "(100)"
+        ws["D4"] = "(100)"
+        ws["E4"] = "(100)"
+        ws["F4"] = "(300)"
 
         # Data rows (5-15)
         students = [
@@ -561,19 +564,23 @@ class ReadmeTestSuite:
         wb.save(filepath)
 
         # README example config
-        config = [{
-            "sheets": ["School_*"],
-            "extractions": [{
-                "function": "dataframe",
-                "label": "DataFrame",
-                "instructions": {
-                    "row_range": [5, 15],
-                    "column_range": ["B", "F"],
-                    "header_row": [2, 3, 4],
-                    "separator": " ",
-                }
-            }]
-        }]
+        config = [
+            {
+                "sheets": ["School_*"],
+                "extractions": [
+                    {
+                        "function": "dataframe",
+                        "label": "DataFrame",
+                        "instructions": {
+                            "row_range": [5, 15],
+                            "column_range": ["B", "F"],
+                            "header_row": [2, 3, 4],
+                            "separator": " ",
+                        },
+                    }
+                ],
+            }
+        ]
 
         result = self._run_extraction([filepath], config)
         file_key = list(result.keys())[0]
@@ -607,17 +614,16 @@ class ReadmeTestSuite:
                 ws.title = name
             else:
                 ws = wb.create_sheet(name)
-            ws['A1'] = f"Data from {name}"
+            ws["A1"] = f"Data from {name}"
 
         wb.save(filepath)
 
-        config = [{
-            "sheets": ["School_*"],  # Should match School_A, School_B, School_C
-            "extractions": [{
-                "function": "single_cells",
-                "instructions": {"data": "A1"}
-            }]
-        }]
+        config = [
+            {
+                "sheets": ["School_*"],  # Should match School_A, School_B, School_C
+                "extractions": [{"function": "single_cells", "instructions": {"data": "A1"}}],
+            }
+        ]
 
         result = self._run_extraction([filepath], config)
         file_key = list(result.keys())[0]
@@ -648,18 +654,17 @@ class ReadmeTestSuite:
                 ws.title = name
             else:
                 ws = wb.create_sheet(name)
-            ws['A1'] = f"Content of {name}"
+            ws["A1"] = f"Content of {name}"
 
         wb.save(filepath)
 
-        config = [{
-            "sheets": ["Data_*"],
-            "skip_sheets": ["Data_Summary"],  # Skip the summary sheet
-            "extractions": [{
-                "function": "single_cells",
-                "instructions": {"content": "A1"}
-            }]
-        }]
+        config = [
+            {
+                "sheets": ["Data_*"],
+                "skip_sheets": ["Data_Summary"],  # Skip the summary sheet
+                "extractions": [{"function": "single_cells", "instructions": {"content": "A1"}}],
+            }
+        ]
 
         result = self._run_extraction([filepath], config)
         file_key = list(result.keys())[0]
@@ -686,46 +691,38 @@ class ReadmeTestSuite:
         ws.title = "Report"
 
         # Header section
-        ws['A1'] = "Report Title"
-        ws['B1'] = "Q4 2024 Summary"
-        ws['A2'] = "Generated"
-        ws['B2'] = datetime(2024, 12, 31)
+        ws["A1"] = "Report Title"
+        ws["B1"] = "Q4 2024 Summary"
+        ws["A2"] = "Generated"
+        ws["B2"] = datetime(2024, 12, 31)
 
         # Data section (rows 5-10)
-        ws['A4'] = "ID"
-        ws['B4'] = "Value"
+        ws["A4"] = "ID"
+        ws["B4"] = "Value"
         for i in range(5, 10):
-            ws.cell(row=i, column=1, value=f"ITEM{i-4}")
+            ws.cell(row=i, column=1, value=f"ITEM{i - 4}")
             ws.cell(row=i, column=2, value=(i - 4) * 100)
 
         wb.save(filepath)
 
-        config = [{
-            "sheets": ["Report"],
-            "extractions": [
-                {
-                    "function": "single_cells",
-                    "label": "header",
-                    "instructions": {
-                        "title": "B1",
-                        "date": "B2"
-                    }
-                },
-                {
-                    "function": "multirow_patterns",
-                    "label": "data",
-                    "instructions": {
-                        "row_range": [5, 20],
-                        "unique_id": "A",
-                        "stop_if_empty": "A",
-                        "columns": {
-                            "ID": "A",
-                            "Value": "B"
-                        }
-                    }
-                }
-            ]
-        }]
+        config = [
+            {
+                "sheets": ["Report"],
+                "extractions": [
+                    {"function": "single_cells", "label": "header", "instructions": {"title": "B1", "date": "B2"}},
+                    {
+                        "function": "multirow_patterns",
+                        "label": "data",
+                        "instructions": {
+                            "row_range": [5, 20],
+                            "unique_id": "A",
+                            "stop_if_empty": "A",
+                            "columns": {"ID": "A", "Value": "B"},
+                        },
+                    },
+                ],
+            }
+        ]
 
         result = self._run_extraction([filepath], config)
         file_key = list(result.keys())[0]
@@ -760,17 +757,17 @@ class ReadmeTestSuite:
 
         wb.save(filepath)
 
-        config = [{
-            "sheets": ["Sheet1"],
-            "extractions": [{
-                "function": "multirow_patterns",
-                "instructions": {
-                    "row_range": [1, 10],
-                    "unique_id": "A",
-                    "columns": {"ID": "A", "Value": "B"}
-                }
-            }]
-        }]
+        config = [
+            {
+                "sheets": ["Sheet1"],
+                "extractions": [
+                    {
+                        "function": "multirow_patterns",
+                        "instructions": {"row_range": [1, 10], "unique_id": "A", "columns": {"ID": "A", "Value": "B"}},
+                    }
+                ],
+            }
+        ]
 
         result = self._run_extraction([filepath], config)
         file_key = list(result.keys())[0]
@@ -814,8 +811,8 @@ class ReadmeTestSuite:
                     ws = wb.create_sheet(f"Data_{sheet_idx + 1}")
 
                 # Header info
-                ws['A1'] = f"Report {i + 1}"
-                ws['B1'] = datetime.now()
+                ws["A1"] = f"Report {i + 1}"
+                ws["B1"] = datetime.now()
 
                 # 100 rows of data per sheet
                 for row in range(5, 105):
@@ -831,35 +828,24 @@ class ReadmeTestSuite:
         print(f"  Created {len(files)} files with 3 sheets x 100 rows each")
 
         # Complex extraction config
-        config = [{
-            "sheets": ["Data_*"],
-            "extractions": [
-                {
-                    "function": "single_cells",
-                    "label": "header",
-                    "instructions": {
-                        "title": "A1",
-                        "date": "B1"
-                    }
-                },
-                {
-                    "function": "multirow_patterns",
-                    "label": "records",
-                    "instructions": {
-                        "row_range": [5, 200],
-                        "unique_id": "A",
-                        "stop_if_empty": "A",
-                        "columns": {
-                            "ID": "A",
-                            "Name": "B",
-                            "Value": "C",
-                            "Category": "D",
-                            "Date": "E"
-                        }
-                    }
-                }
-            ]
-        }]
+        config = [
+            {
+                "sheets": ["Data_*"],
+                "extractions": [
+                    {"function": "single_cells", "label": "header", "instructions": {"title": "A1", "date": "B1"}},
+                    {
+                        "function": "multirow_patterns",
+                        "label": "records",
+                        "instructions": {
+                            "row_range": [5, 200],
+                            "unique_id": "A",
+                            "stop_if_empty": "A",
+                            "columns": {"ID": "A", "Name": "B", "Value": "C", "Category": "D", "Date": "E"},
+                        },
+                    },
+                ],
+            }
+        ]
 
         # Test with different worker counts
         for workers in [1, 4, 8]:

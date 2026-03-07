@@ -1,9 +1,9 @@
-use anyhow::{Result, Error};
-use calamine::{Range, Data};
-use serde_json::{Map, Value};
+use crate::utils::parsed_config::{ParsedColumn, ParsedMultirowConfig};
+use crate::utils::{conversions, helpers, manipulations};
+use anyhow::{Error, Result};
+use calamine::{Data, Range};
 use indexmap::IndexMap;
-use crate::utils::{conversions, manipulations, helpers};
-use crate::utils::parsed_config::{ParsedMultirowConfig, ParsedColumn};
+use serde_json::{Map, Value};
 
 #[derive(Debug)]
 enum StopMode {
@@ -34,8 +34,9 @@ fn parse_stop_config(instructions: &Map<String, Value>) -> Result<Option<StopCon
             if s == "row" {
                 (StopMode::Row, vec![])
             } else {
-                let col = conversions::column_name_to_index(s)
-                    .map_err(|_| Error::msg(format!("Invalid column '{}' in 'stop_if_empty'", s)))?;
+                let col = conversions::column_name_to_index(s).map_err(|_| {
+                    Error::msg(format!("Invalid column '{}' in 'stop_if_empty'", s))
+                })?;
                 (StopMode::Column, vec![col])
             }
         }
@@ -54,7 +55,8 @@ fn parse_stop_config(instructions: &Map<String, Value>) -> Result<Option<StopCon
         }
         Value::Object(obj) => {
             if let Some(mode_val) = obj.get("mode") {
-                let mode_str = mode_val.as_str()
+                let mode_str = mode_val
+                    .as_str()
                     .ok_or_else(|| Error::msg("'mode' in 'stop_if_empty' must be a string"))?;
 
                 match mode_str {
@@ -65,8 +67,11 @@ fn parse_stop_config(instructions: &Map<String, Value>) -> Result<Option<StopCon
                         (StopMode::Row, vec![])
                     }
                     "column" => {
-                        let column_val = obj.get("column")
-                            .ok_or_else(|| Error::msg("'column' field required in 'stop_if_empty' when mode is 'column'"))?;
+                        let column_val = obj.get("column").ok_or_else(|| {
+                            Error::msg(
+                                "'column' field required in 'stop_if_empty' when mode is 'column'",
+                            )
+                        })?;
 
                         if let Some(cons) = obj.get("consecutive").and_then(Value::as_u64) {
                             consecutive = cons as usize;
@@ -75,11 +80,17 @@ fn parse_stop_config(instructions: &Map<String, Value>) -> Result<Option<StopCon
                         let cols = parse_column_value(column_val)?;
                         (StopMode::Column, cols)
                     }
-                    _ => return Err(Error::msg(format!("Invalid mode '{}' in 'stop_if_empty'. Must be 'row' or 'column'", mode_str)))
+                    _ => {
+                        return Err(Error::msg(format!(
+                            "Invalid mode '{}' in 'stop_if_empty'. Must be 'row' or 'column'",
+                            mode_str
+                        )))
+                    }
                 }
             } else {
-                let column_val = obj.get("column")
-                    .ok_or_else(|| Error::msg("'column' field required in 'stop_if_empty' object"))?;
+                let column_val = obj.get("column").ok_or_else(|| {
+                    Error::msg("'column' field required in 'stop_if_empty' object")
+                })?;
 
                 if let Some(cons) = obj.get("consecutive").and_then(Value::as_u64) {
                     consecutive = cons as usize;
@@ -89,7 +100,11 @@ fn parse_stop_config(instructions: &Map<String, Value>) -> Result<Option<StopCon
                 (StopMode::Column, cols)
             }
         }
-        _ => return Err(Error::msg("'stop_if_empty' must be a string, array, or object"))
+        _ => {
+            return Err(Error::msg(
+                "'stop_if_empty' must be a string, array, or object",
+            ))
+        }
     };
 
     Ok(Some(StopConfig {
@@ -106,24 +121,31 @@ fn parse_column_value(column_val: &Value) -> Result<Vec<u32>, Error> {
                 .map_err(|_| Error::msg(format!("Invalid column '{}' in 'stop_if_empty'", s)))?;
             Ok(vec![col])
         }
-        Value::Array(arr) => {
-            arr.iter()
-                .enumerate()
-                .map(|(i, v)| {
-                    let col_str = v.as_str()
-                        .ok_or_else(|| Error::msg(format!("Invalid value in column array at position {}: expected string", i)))?;
-                    conversions::column_name_to_index(col_str)
-                        .map_err(|_| Error::msg(format!("Invalid column '{}'", col_str)))
-                })
-                .collect::<Result<Vec<_>, _>>()
-        }
-        _ => Err(Error::msg("'column' must be a string or array of strings"))
+        Value::Array(arr) => arr
+            .iter()
+            .enumerate()
+            .map(|(i, v)| {
+                let col_str = v.as_str().ok_or_else(|| {
+                    Error::msg(format!(
+                        "Invalid value in column array at position {}: expected string",
+                        i
+                    ))
+                })?;
+                conversions::column_name_to_index(col_str)
+                    .map_err(|_| Error::msg(format!("Invalid column '{}'", col_str)))
+            })
+            .collect::<Result<Vec<_>, _>>(),
+        _ => Err(Error::msg("'column' must be a string or array of strings")),
     }
 }
 
 /// Check if a row is empty using pre-computed column indices.
 /// This version avoids re-parsing column names on every row check (Bottleneck #2 fix).
-fn is_row_empty_with_parsed(sheet: &Range<Data>, row: u32, columns: &[ParsedColumn]) -> Result<bool, Error> {
+fn is_row_empty_with_parsed(
+    sheet: &Range<Data>,
+    row: u32,
+    columns: &[ParsedColumn],
+) -> Result<bool, Error> {
     for parsed_col in columns {
         for &col in &parsed_col.indices {
             match manipulations::extract_cell_value(sheet, row, col, false) {
@@ -156,7 +178,10 @@ fn are_columns_empty(sheet: &Range<Data>, row: u32, columns: &[u32]) -> Result<b
 }
 
 /// Extract rows using pre-parsed configuration to avoid repeated parsing in the hot loop.
-pub fn extract_rows(sheet: &Range<Data>, instructions: &Map<String, Value>) -> Result<Value, Error> {
+pub fn extract_rows(
+    sheet: &Range<Data>,
+    instructions: &Map<String, Value>,
+) -> Result<Value, Error> {
     // Parse configuration ONCE before the row loop (Bottleneck #2, #3 fix)
     let config = ParsedMultirowConfig::from_instructions(instructions)?;
     let stop_config = parse_stop_config(instructions)?;
@@ -212,7 +237,7 @@ pub fn extract_rows(sheet: &Range<Data>, instructions: &Map<String, Value>) -> R
                             all_parts_valid = false;
                             break;
                         }
-                    },
+                    }
                     _ => {
                         all_parts_valid = false;
                         break;

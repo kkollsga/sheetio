@@ -1,15 +1,15 @@
 // utils.rs
-use pyo3::types::{PyList, PyDict, PyString, PyFloat, PyInt};
 use pyo3::prelude::*;
+use pyo3::types::{PyDict, PyFloat, PyInt, PyList, PyString};
 use pyo3::Bound;
-use serde_json::{Value, Map};
-pub mod single_cells;
-pub mod multirow_patterns;
-pub mod dataframe;
+use serde_json::{Map, Value};
 pub mod conversions;
-pub mod manipulations;
+pub mod dataframe;
 pub mod helpers;
+pub mod manipulations;
+pub mod multirow_patterns;
 pub mod parsed_config;
+pub mod single_cells;
 
 fn pydict_to_json_value(pydict: &Bound<'_, PyDict>) -> PyResult<Value> {
     let mut map = Map::new(); // Use serde_json::Map directly
@@ -26,7 +26,8 @@ fn pydict_to_json_value(pydict: &Bound<'_, PyDict>) -> PyResult<Value> {
 fn python_object_to_value(obj: &Bound<'_, PyAny>) -> PyResult<Value> {
     if let Ok(list) = obj.cast::<PyList>() {
         // Use a closure to adapt the function for the map call
-        let vec: Vec<Value> = list.iter()
+        let vec: Vec<Value> = list
+            .iter()
             .map(|item| python_object_to_value(&item))
             .collect::<PyResult<_>>()?;
         Ok(Value::from(vec))
@@ -42,16 +43,22 @@ fn python_object_to_value(obj: &Bound<'_, PyAny>) -> PyResult<Value> {
         Ok(Value::Null)
     } else {
         // Handle other types or raise an error
-        Err(PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!("Unsupported Python type: {:?}", obj)))
+        Err(PyErr::new::<pyo3::exceptions::PyTypeError, _>(format!(
+            "Unsupported Python type: {:?}",
+            obj
+        )))
     }
 }
 
 /// Converts a `PyList` of `PyDicts` into a `Vec<serde_json::Value>`.
 pub fn pylist_to_json(pylist: &Bound<'_, PyList>) -> PyResult<Vec<Value>> {
-    pylist.iter().map(|item| {
-        let detail_dict = item.cast::<PyDict>()?;
-        pydict_to_json_value(detail_dict)
-    }).collect()
+    pylist
+        .iter()
+        .map(|item| {
+            let detail_dict = item.cast::<PyDict>()?;
+            pydict_to_json_value(detail_dict)
+        })
+        .collect()
 }
 
 pub fn match_sheet_names(sheet_names: &[String], pattern: &str) -> Vec<String> {
@@ -60,7 +67,7 @@ pub fn match_sheet_names(sheet_names: &[String], pattern: &str) -> Vec<String> {
             let (start, end) = pattern.split_at(index);
             let end = end.trim_start_matches('*');
             (start, end)
-        },
+        }
         None => ("", ""), // Default start and end if asterisk is not found
     };
     sheet_names

@@ -1,10 +1,13 @@
-use anyhow::{Result, Error};
-use calamine::{Range, Data};
-use serde_json::{Map, Value};
-use indexmap::IndexMap;
 use crate::utils::{conversions, manipulations};
+use anyhow::{Error, Result};
+use calamine::{Data, Range};
+use indexmap::IndexMap;
+use serde_json::{Map, Value};
 
-pub fn extract_values(sheet: &Range<Data>, instructions: &Map<String, Value>) -> Result<IndexMap<String, Value>, Error> {
+pub fn extract_values(
+    sheet: &Range<Data>,
+    instructions: &Map<String, Value>,
+) -> Result<IndexMap<String, Value>, Error> {
     let mut results = IndexMap::new();
     for (key, value) in instructions {
         match value {
@@ -12,10 +15,20 @@ pub fn extract_values(sheet: &Range<Data>, instructions: &Map<String, Value>) ->
                 let mut address_values = Vec::new();
                 for address_value in addresses {
                     let (row, col) = match address_value {
-                        Value::String(cell_address) => conversions::address_to_row_col(&cell_address)?,
+                        Value::String(cell_address) => {
+                            conversions::address_to_row_col(cell_address)?
+                        }
                         Value::Object(obj) => {
-                            let row = obj.get("row").and_then(Value::as_u64).ok_or_else(|| Error::msg("Missing 'row'"))? as u32;
-                            let col = obj.get("col").and_then(Value::as_u64).ok_or_else(|| Error::msg("Missing 'col'"))? as u32;
+                            let row = obj
+                                .get("row")
+                                .and_then(Value::as_u64)
+                                .ok_or_else(|| Error::msg("Missing 'row'"))?
+                                as u32;
+                            let col = obj
+                                .get("col")
+                                .and_then(Value::as_u64)
+                                .ok_or_else(|| Error::msg("Missing 'col'"))?
+                                as u32;
                             (row, col)
                         }
                         _ => return Err(Error::msg("Invalid or missing row/column specification")),
@@ -33,10 +46,14 @@ pub fn extract_values(sheet: &Range<Data>, instructions: &Map<String, Value>) ->
                 results.insert(key.clone(), Value::Array(address_values));
             }
             Value::String(cell_address) => {
-                let (row, col) = conversions::address_to_row_col(&cell_address)?;
+                let (row, col) = conversions::address_to_row_col(cell_address)?;
                 match manipulations::extract_cell_value(sheet, row, col, false) {
-                    Ok((Some(cell_value), _)) => { results.insert(key.clone(), cell_value); }
-                    Ok((None, _)) => { results.insert(key.clone(), Value::Null); }
+                    Ok((Some(cell_value), _)) => {
+                        results.insert(key.clone(), cell_value);
+                    }
+                    Ok((None, _)) => {
+                        results.insert(key.clone(), Value::Null);
+                    }
                     Err(e) => return Err(e),
                 }
             }

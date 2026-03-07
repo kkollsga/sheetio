@@ -6,47 +6,50 @@ Test new multirow_patterns features:
 3. Empty row and column detection
 """
 
-import pandas as pd
 import json
-import sheet_excavator
 import os
+
+import pandas as pd
+import sheet_excavator
 
 print("Creating test Excel file...")
 
 # Create test data with gaps and empty rows
-df = pd.DataFrame({
-    'ID': ['001', '002', '003', None, '005', None, None, None],
-    'Name': ['Alice', 'Bob', 'Charlie', None, 'Eve', None, None, None],
-    'Value': [100, 200, 300, None, 500, None, None, None],
-    'Notes': ['A', 'B', None, None, 'E', None, None, None]
-})
+df = pd.DataFrame(
+    {
+        "ID": ["001", "002", "003", None, "005", None, None, None],
+        "Name": ["Alice", "Bob", "Charlie", None, "Eve", None, None, None],
+        "Value": [100, 200, 300, None, 500, None, None, None],
+        "Notes": ["A", "B", None, None, "E", None, None, None],
+    }
+)
 
-test_file = 'test_new_features.xlsx'
-df.to_excel(test_file, sheet_name='TestSheet', index=False)
+test_file = "test_new_features.xlsx"
+df.to_excel(test_file, sheet_name="TestSheet", index=False)
 print(f"✓ Created {test_file}")
 print(f"  Data:\n{df}\n")
 
 # Test 1: No unique_id - returns list (array)
-print("="*60)
+print("=" * 60)
 print("Test 1: No unique_id - should return array")
-print("="*60)
+print("=" * 60)
 
-config1 = [{
-    "sheets": ["TestSheet"],
-    "extractions": [{
-        "function": "multirow_patterns",
-        "label": "items_list",
-        "instructions": {
-            "row_range": [2, 9],
-            "stop_if_empty": "A",  # Stop when ID column is empty
-            "columns": {
-                "ID": "A",
-                "Name": "B",
-                "Value": "C"
+config1 = [
+    {
+        "sheets": ["TestSheet"],
+        "extractions": [
+            {
+                "function": "multirow_patterns",
+                "label": "items_list",
+                "instructions": {
+                    "row_range": [2, 9],
+                    "stop_if_empty": "A",  # Stop when ID column is empty
+                    "columns": {"ID": "A", "Name": "B", "Value": "C"},
+                },
             }
-        }
-    }]
-}]
+        ],
+    }
+]
 
 try:
     result = sheet_excavator.excel_extract([test_file], config1, 1)
@@ -57,7 +60,7 @@ try:
 
     # Navigate to the result - use first key (might be absolute path)
     file_key = list(parsed.keys())[0]
-    items = parsed[file_key]['TestSheet']['items_list']
+    items = parsed[file_key]["TestSheet"]["items_list"]
     print(f"Result type: {type(items)}")
     print(f"Number of items: {len(items)}")
 
@@ -78,36 +81,37 @@ try:
 except Exception as e:
     print(f"✗ Test 1 FAILED: {e}")
     import traceback
+
     traceback.print_exc()
 
 # Test 2: With unique_id - returns dict (backward compatibility)
-print("\n" + "="*60)
+print("\n" + "=" * 60)
 print("Test 2: With unique_id - should return object/dict")
-print("="*60)
+print("=" * 60)
 
-config2 = [{
-    "sheets": ["TestSheet"],
-    "extractions": [{
-        "function": "multirow_patterns",
-        "label": "items_dict",
-        "instructions": {
-            "row_range": [2, 9],
-            "unique_id": "A",
-            "columns": {
-                "ID": "A",
-                "Name": "B",
-                "Value": "C"
+config2 = [
+    {
+        "sheets": ["TestSheet"],
+        "extractions": [
+            {
+                "function": "multirow_patterns",
+                "label": "items_dict",
+                "instructions": {
+                    "row_range": [2, 9],
+                    "unique_id": "A",
+                    "columns": {"ID": "A", "Name": "B", "Value": "C"},
+                },
             }
-        }
-    }]
-}]
+        ],
+    }
+]
 
 try:
     result = sheet_excavator.excel_extract([test_file], config2, 1)
     parsed = json.loads(result)
 
     file_key = list(parsed.keys())[0]
-    items = parsed[file_key]['TestSheet']['items_dict']
+    items = parsed[file_key]["TestSheet"]["items_dict"]
     print(f"Result type: {type(items)}")
 
     if isinstance(items, dict):
@@ -121,37 +125,38 @@ try:
 except Exception as e:
     print(f"✗ Test 2 FAILED: {e}")
     import traceback
+
     traceback.print_exc()
 
 # Test 3: stop_if_empty with consecutive parameter
-print("\n" + "="*60)
+print("\n" + "=" * 60)
 print("Test 3: stop_consecutive to tolerate gaps")
-print("="*60)
+print("=" * 60)
 
-config3 = [{
-    "sheets": ["TestSheet"],
-    "extractions": [{
-        "function": "multirow_patterns",
-        "label": "with_gaps",
-        "instructions": {
-            "row_range": [2, 9],
-            "stop_if_empty": "A",
-            "stop_consecutive": 2,  # Allow 1 gap
-            "columns": {
-                "ID": "A",
-                "Name": "B",
-                "Value": "C"
+config3 = [
+    {
+        "sheets": ["TestSheet"],
+        "extractions": [
+            {
+                "function": "multirow_patterns",
+                "label": "with_gaps",
+                "instructions": {
+                    "row_range": [2, 9],
+                    "stop_if_empty": "A",
+                    "stop_consecutive": 2,  # Allow 1 gap
+                    "columns": {"ID": "A", "Name": "B", "Value": "C"},
+                },
             }
-        }
-    }]
-}]
+        ],
+    }
+]
 
 try:
     result = sheet_excavator.excel_extract([test_file], config3, 1)
     parsed = json.loads(result)
 
     file_key = list(parsed.keys())[0]
-    items = parsed[file_key]['TestSheet']['with_gaps']
+    items = parsed[file_key]["TestSheet"]["with_gaps"]
     print(f"Number of items: {len(items)}")
 
     # Should get 4 items (001, 002, 003, 005) because we tolerate 1 gap
@@ -166,40 +171,37 @@ try:
 except Exception as e:
     print(f"✗ Test 3 FAILED: {e}")
     import traceback
+
     traceback.print_exc()
 
 # Test 4: stop_if_empty with row mode (object syntax)
-print("\n" + "="*60)
+print("\n" + "=" * 60)
 print("Test 4: stop_if_empty with row mode")
-print("="*60)
+print("=" * 60)
 
-config4 = [{
-    "sheets": ["TestSheet"],
-    "extractions": [{
-        "function": "multirow_patterns",
-        "label": "row_mode",
-        "instructions": {
-            "row_range": [2, 9],
-            "stop_if_empty": {
-                "mode": "row",
-                "consecutive": 1
-            },
-            "columns": {
-                "ID": "A",
-                "Name": "B",
-                "Value": "C",
-                "Notes": "D"
+config4 = [
+    {
+        "sheets": ["TestSheet"],
+        "extractions": [
+            {
+                "function": "multirow_patterns",
+                "label": "row_mode",
+                "instructions": {
+                    "row_range": [2, 9],
+                    "stop_if_empty": {"mode": "row", "consecutive": 1},
+                    "columns": {"ID": "A", "Name": "B", "Value": "C", "Notes": "D"},
+                },
             }
-        }
-    }]
-}]
+        ],
+    }
+]
 
 try:
     result = sheet_excavator.excel_extract([test_file], config4, 1)
     parsed = json.loads(result)
 
     file_key = list(parsed.keys())[0]
-    items = parsed[file_key]['TestSheet']['row_mode']
+    items = parsed[file_key]["TestSheet"]["row_mode"]
     print(f"Number of items: {len(items)}")
 
     # Row 3 has some data, row 4 is completely empty - should stop at row 4
@@ -214,36 +216,37 @@ try:
 except Exception as e:
     print(f"✗ Test 4 FAILED: {e}")
     import traceback
+
     traceback.print_exc()
 
 # Test 5: stop_if_empty with multiple columns (array syntax)
-print("\n" + "="*60)
+print("\n" + "=" * 60)
 print("Test 5: stop_if_empty with multiple columns")
-print("="*60)
+print("=" * 60)
 
-config5 = [{
-    "sheets": ["TestSheet"],
-    "extractions": [{
-        "function": "multirow_patterns",
-        "label": "multi_column",
-        "instructions": {
-            "row_range": [2, 9],
-            "stop_if_empty": ["A", "B"],  # Stop when both ID and Name are empty
-            "columns": {
-                "ID": "A",
-                "Name": "B",
-                "Value": "C"
+config5 = [
+    {
+        "sheets": ["TestSheet"],
+        "extractions": [
+            {
+                "function": "multirow_patterns",
+                "label": "multi_column",
+                "instructions": {
+                    "row_range": [2, 9],
+                    "stop_if_empty": ["A", "B"],  # Stop when both ID and Name are empty
+                    "columns": {"ID": "A", "Name": "B", "Value": "C"},
+                },
             }
-        }
-    }]
-}]
+        ],
+    }
+]
 
 try:
     result = sheet_excavator.excel_extract([test_file], config5, 1)
     parsed = json.loads(result)
 
     file_key = list(parsed.keys())[0]
-    items = parsed[file_key]['TestSheet']['multi_column']
+    items = parsed[file_key]["TestSheet"]["multi_column"]
     print(f"Number of items: {len(items)}")
 
     # Should stop when BOTH A and B are empty (row 4)
@@ -258,39 +261,37 @@ try:
 except Exception as e:
     print(f"✗ Test 5 FAILED: {e}")
     import traceback
+
     traceback.print_exc()
 
 # Test 6: stop_if_empty with object syntax (column mode)
-print("\n" + "="*60)
+print("\n" + "=" * 60)
 print("Test 6: stop_if_empty object syntax with column")
-print("="*60)
+print("=" * 60)
 
-config6 = [{
-    "sheets": ["TestSheet"],
-    "extractions": [{
-        "function": "multirow_patterns",
-        "label": "object_syntax",
-        "instructions": {
-            "row_range": [2, 9],
-            "stop_if_empty": {
-                "column": "A",
-                "consecutive": 1
-            },
-            "columns": {
-                "ID": "A",
-                "Name": "B",
-                "Value": "C"
+config6 = [
+    {
+        "sheets": ["TestSheet"],
+        "extractions": [
+            {
+                "function": "multirow_patterns",
+                "label": "object_syntax",
+                "instructions": {
+                    "row_range": [2, 9],
+                    "stop_if_empty": {"column": "A", "consecutive": 1},
+                    "columns": {"ID": "A", "Name": "B", "Value": "C"},
+                },
             }
-        }
-    }]
-}]
+        ],
+    }
+]
 
 try:
     result = sheet_excavator.excel_extract([test_file], config6, 1)
     parsed = json.loads(result)
 
     file_key = list(parsed.keys())[0]
-    items = parsed[file_key]['TestSheet']['object_syntax']
+    items = parsed[file_key]["TestSheet"]["object_syntax"]
     print(f"Number of items: {len(items)}")
 
     if len(items) == 3:
@@ -304,6 +305,7 @@ try:
 except Exception as e:
     print(f"✗ Test 6 FAILED: {e}")
     import traceback
+
     traceback.print_exc()
 
 # Cleanup
@@ -311,6 +313,6 @@ if os.path.exists(test_file):
     os.remove(test_file)
     print(f"\n✓ Cleaned up {test_file}")
 
-print("\n" + "="*60)
+print("\n" + "=" * 60)
 print("ALL TESTS COMPLETED")
-print("="*60)
+print("=" * 60)

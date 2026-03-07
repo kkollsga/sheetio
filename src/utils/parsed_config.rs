@@ -1,6 +1,6 @@
-use serde_json::{Map, Value};
-use anyhow::{Result, Error};
 use crate::utils::conversions;
+use anyhow::{Error, Result};
+use serde_json::{Map, Value};
 
 /// Pre-parsed column specification with indices already computed.
 ///
@@ -42,20 +42,26 @@ impl ParsedMultirowConfig {
     /// on every row iteration.
     pub fn from_instructions(instructions: &Map<String, Value>) -> Result<Self, Error> {
         // Parse row_range
-        let row_range = instructions.get("row_range")
+        let row_range = instructions
+            .get("row_range")
             .and_then(Value::as_array)
             .ok_or_else(|| Error::msg("Missing or invalid 'row_range'"))?;
 
-        let start_row = row_range.get(0)
+        let start_row = row_range
+            .first()
             .and_then(Value::as_u64)
-            .ok_or_else(|| Error::msg("Missing 'start_row' in 'row_range'"))? as u32;
+            .ok_or_else(|| Error::msg("Missing 'start_row' in 'row_range'"))?
+            as u32;
 
-        let end_row = row_range.get(1)
+        let end_row = row_range
+            .get(1)
             .and_then(Value::as_u64)
-            .ok_or_else(|| Error::msg("Missing 'end_row' in 'row_range'"))? as u32;
+            .ok_or_else(|| Error::msg("Missing 'end_row' in 'row_range'"))?
+            as u32;
 
         // Pre-parse columns - convert all column names to indices
-        let columns_map = instructions.get("columns")
+        let columns_map = instructions
+            .get("columns")
             .and_then(Value::as_object)
             .ok_or_else(|| Error::msg("Missing 'columns'"))?;
 
@@ -100,20 +106,23 @@ impl ParsedMultirowConfig {
                     .map_err(|_| Error::msg(format!("Invalid column '{}' in columns spec", s)))?;
                 Ok(vec![idx])
             }
-            Value::Array(arr) => {
-                arr.iter()
-                    .enumerate()
-                    .map(|(i, v)| {
-                        let col_str = v.as_str()
-                            .ok_or_else(|| Error::msg(format!(
-                                "Invalid value in column array at position {}: expected string", i
-                            )))?;
-                        conversions::column_name_to_index(col_str)
-                            .map_err(|_| Error::msg(format!("Invalid column '{}'", col_str)))
-                    })
-                    .collect()
-            }
-            _ => Err(Error::msg("Column specification must be a string or array of strings"))
+            Value::Array(arr) => arr
+                .iter()
+                .enumerate()
+                .map(|(i, v)| {
+                    let col_str = v.as_str().ok_or_else(|| {
+                        Error::msg(format!(
+                            "Invalid value in column array at position {}: expected string",
+                            i
+                        ))
+                    })?;
+                    conversions::column_name_to_index(col_str)
+                        .map_err(|_| Error::msg(format!("Invalid column '{}'", col_str)))
+                })
+                .collect(),
+            _ => Err(Error::msg(
+                "Column specification must be a string or array of strings",
+            )),
         }
     }
 
@@ -141,7 +150,9 @@ impl ParsedMultirowConfig {
                     })
                     .collect()
             }
-            _ => Err(Error::msg("'unique_id' must be a string or an array of strings"))
+            _ => Err(Error::msg(
+                "'unique_id' must be a string or an array of strings",
+            )),
         }
     }
 }

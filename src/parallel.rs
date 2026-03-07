@@ -1,15 +1,19 @@
-use tokio::sync::Semaphore;
-use std::{sync::Arc, time::Instant};
-use futures::stream::{FuturesUnordered, StreamExt};
-use serde_json::{Value, Map};
 use crate::read_excel::process_file;
-use anyhow::{Result, Error};
 use crate::utils::{conversions, helpers};
+use anyhow::{Error, Result};
+use futures::stream::{FuturesUnordered, StreamExt};
+use serde_json::{Map, Value};
+use std::{sync::Arc, time::Instant};
+use tokio::sync::Semaphore;
 
 /// Process multiple files in parallel with a semaphore-controlled worker pool.
 ///
 /// Uses Arc<Vec<Value>> to share extraction config without deep cloning (Bottleneck #1 fix).
-pub async fn process_files(file_paths: Vec<String>, extraction_details: Arc<Vec<Value>>, num_workers: usize) -> Result<Map<String, Value>, Error> {
+pub async fn process_files(
+    file_paths: Vec<String>,
+    extraction_details: Arc<Vec<Value>>,
+    num_workers: usize,
+) -> Result<Map<String, Value>, Error> {
     println!("Processing files!");
     let semaphore = Arc::new(Semaphore::new(num_workers));
 
@@ -29,12 +33,18 @@ pub async fn process_files(file_paths: Vec<String>, extraction_details: Arc<Vec<
             let result = process_file(path_str_clone, details_clone).await;
             let files_left = total - (index + 1);
             let avg_time_per_file = if index > 0 {
-                start_time.elapsed().as_secs_f64() / (index+1) as f64
+                start_time.elapsed().as_secs_f64() / (index + 1) as f64
             } else {
                 0.0
             };
             let estimated_time_left = avg_time_per_file * files_left as f64;
-            println!("Progress: {}/{} files. Avg: {:.2}s. Time left: {:.2}s.", (index+1), total, avg_time_per_file, estimated_time_left);
+            println!(
+                "Progress: {}/{} files. Avg: {:.2}s. Time left: {:.2}s.",
+                (index + 1),
+                total,
+                avg_time_per_file,
+                estimated_time_left
+            );
             drop(permit);
             result
         }));
@@ -50,12 +60,15 @@ pub async fn process_files(file_paths: Vec<String>, extraction_details: Arc<Vec<
                     let filename_key = helpers::make_unique_key(&results, &base_filename);
                     results.insert(filename_key, value);
                 }
-            },
-            Ok(Err(e)) => return Err(e.into()),
+            }
+            Ok(Err(e)) => return Err(e),
             Err(e) => return Err(anyhow::Error::new(e)),
         }
     }
 
-    println!("All files processed. Total time: {:.2?}", start_time.elapsed());
+    println!(
+        "All files processed. Total time: {:.2?}",
+        start_time.elapsed()
+    );
     Ok(results)
 }
