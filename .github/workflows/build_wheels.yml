@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: lewagon/wait-on-check-action@v1.6.0
+      - uses: lewagon/wait-on-check-action@v1.7.0
         with:
           ref: ${{ github.sha }}
           check-regexp: ^(Rust checks|Python checks|Tests)
@@ -112,7 +112,7 @@ jobs:
           echo "$BODY" >> $GITHUB_OUTPUT
           echo "CHANGELOG_EOF" >> $GITHUB_OUTPUT
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: dist/*.whl
           body: ${{ steps.changelog.outputs.body }}
