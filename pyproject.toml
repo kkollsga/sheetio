@@ -40,6 +40,9 @@ Changelog = "https://github.com/kkollsga/sheetio/blob/main/CHANGELOG.md"
 [tool.ruff]
 line-length = 120
 target-version = "py310"
+# Docs examples are hand-formatted for readability; ruff >=0.16 formats Python
+# code blocks in Markdown, which collapses the nested config samples.
+extend-exclude = ["*.md"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W"]
