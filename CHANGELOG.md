@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.8] - 2026-08-02
+
 ### Fixed
 
 - Row-mode `stop_if_empty` now treats a cell holding an empty or whitespace-only
