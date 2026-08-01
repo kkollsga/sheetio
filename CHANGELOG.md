@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Row-mode `stop_if_empty` now treats a cell holding an empty or whitespace-only
+  string as empty, matching column-mode. Previously row-mode only tested for null,
+  so a separator row made of empty strings did not stop extraction and unrelated
+  trailing rows were pulled in. Most visible on legacy `.xls` files, where a blank
+  row can be stored as empty strings rather than omitted cells.
+
+### Added
+
+- Test coverage for legacy `.xls` (BIFF) files, which the openpyxl-based fixtures
+  could not produce. Tests require `xlwt`.
+
 ## [0.3.1] - 2026-03-07
 
 ### Changed

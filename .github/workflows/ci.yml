@@ -45,7 +45,7 @@ jobs:
       - run: |
           python -m venv .venv
           source .venv/bin/activate
-          pip install maturin pytest pytest-cov openpyxl
+          pip install maturin pytest pytest-cov openpyxl xlwt
           maturin develop --release
           pytest tests/ -m "not slow" --cov --cov-report=xml
       - name: Upload coverage

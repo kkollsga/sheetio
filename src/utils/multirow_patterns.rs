@@ -139,6 +139,18 @@ fn parse_column_value(column_val: &Value) -> Result<Vec<u32>, Error> {
     }
 }
 
+/// A cell counts as empty for stop conditions when it is null or a string that is
+/// blank once trimmed. Formats differ on how they store a blank cell -- xlsx tends
+/// to omit it, while xls can store a genuine empty string -- so both must read the
+/// same way to keep `stop_if_empty` consistent across file formats.
+fn is_value_empty(value: &Value) -> bool {
+    match value {
+        Value::Null => true,
+        Value::String(s) => s.trim().is_empty(),
+        _ => false,
+    }
+}
+
 /// Check if a row is empty using pre-computed column indices.
 /// This version avoids re-parsing column names on every row check (Bottleneck #2 fix).
 fn is_row_empty_with_parsed(
@@ -149,7 +161,7 @@ fn is_row_empty_with_parsed(
     for parsed_col in columns {
         for &col in &parsed_col.indices {
             match manipulations::extract_cell_value(sheet, row, col, false) {
-                Ok((Some(value), _)) if !value.is_null() => {
+                Ok((Some(value), _)) if !is_value_empty(&value) => {
                     return Ok(false);
                 }
                 _ => continue,
@@ -162,14 +174,8 @@ fn is_row_empty_with_parsed(
 fn are_columns_empty(sheet: &Range<Data>, row: u32, columns: &[u32]) -> Result<bool, Error> {
     for &col in columns {
         match manipulations::extract_cell_value(sheet, row, col, false) {
-            Ok((Some(value), _)) if !value.is_null() => {
-                if let Value::String(s) = &value {
-                    if !s.trim().is_empty() {
-                        return Ok(false);
-                    }
-                } else {
-                    return Ok(false);
-                }
+            Ok((Some(value), _)) if !is_value_empty(&value) => {
+                return Ok(false);
             }
             _ => continue,
         }
