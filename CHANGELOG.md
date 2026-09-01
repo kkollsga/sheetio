@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.9] - 2026-09-01
+
+### Changed
+
+- Updated Rust dependencies: `pyo3` 0.29.0 → 0.29.2, `futures` 0.3.33 → 0.3.34,
+  `indexmap` 2.14.0 → 2.14.1. No functional changes.
+
 ## [0.3.8] - 2026-08-02
 
 ### Fixed
