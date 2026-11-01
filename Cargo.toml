@@ -17,10 +17,10 @@ crate-type = ["cdylib"]
 
 [dependencies]
 anyhow = "1.0.102"
-calamine = "0.36.1"
+calamine = "0.37.0"
 chrono = "0.4.44"
 futures = "0.3.32"
 indexmap = "2.14.0"
-pyo3 = "0.29.0"
+pyo3 = "0.30.1"
 serde_json = { version = "1.0.150", features = ["preserve_order"] }
 tokio = {version = "1.52.3", features = ["full"] }
